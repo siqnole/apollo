@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { judgeCode, judgeMultipleChoice, judgeFillBlank, judgeOrdering, extractFunctionName } from '../services/judge';
+import { judgeCode, judgeMultipleChoice, judgeFillBlank, judgeOrdering, extractFunctionName, runCodeRaw } from '../services/judge';
 import { judgeHtml } from '../services/htmlJudge';
 import { judgeSql } from '../services/sqlJudge';
 
@@ -66,6 +66,33 @@ export default async function problemRoutes(fastify: FastifyInstance) {
       })),
       options: safeOptions,
     });
+  });
+
+  // ── POST /api/run ───────────────────────────────────────────────────────
+  // Runs code and returns raw output for debugging (without judging)
+  fastify.post('/run', {
+    preHandler: [fastify.authenticate],
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const { language, code, input, fn_name } = req.body as {
+      language: string;
+      code:     string;
+      input?:   string;
+      fn_name?: string;
+    };
+
+    if (!code || !language) return reply.status(400).send({ error: 'code and language required' });
+
+    try {
+      const result = await runCodeRaw(code, language, input ?? '', fn_name ?? null);
+      return reply.send({
+        output:     result.output,
+        runtime_ms: result.runtime_ms,
+        error:      result.error ?? null,
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: 'Internal execution error' });
+    }
   });
 
   // ── POST /api/submissions ────────────────────────────────────────────────

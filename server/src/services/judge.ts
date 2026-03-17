@@ -76,6 +76,11 @@ function parseInputLinePy(line: string): string {
   const t = line.trim();
   if (isSpaceSeparatedNumbers(t)) {
     const nums = t.split(/\s+/).map(Number);
+    // If only one number, return it as-is (not a list)
+    if (nums.length === 1) {
+      return String(nums[0]);
+    }
+    // Multiple numbers: return as list
     return `[${nums.join(', ')}]`;
   }
   try {
@@ -216,15 +221,53 @@ ${code}
 if __name__ == '__main__':
     try:
         result = ${callExpr}
-        # If result is a list of numbers, print space-separated
-        if isinstance(result, list) and all(isinstance(x, (int, float)) for x in result):
-            print(' '.join(str(x) for x in result))
-        else:
-            print(json.dumps(result))
+        # Always use JSON for output to preserve types (strings vs numbers)
+        print(json.dumps(result))
     except Exception as e:
         sys.stderr.write(str(e))
         sys.exit(1)
 `;
+}
+
+// ── Detect trivial Python solutions ────────────────────────────────────────
+// For problems like "sort an array", reject solutions that only use sorted()
+// Counts actual algorithm logic by looking for loops, comparisons, or assignments
+function isPythonTrivialSort(code: string): boolean {
+  // Split code to only analyze function body (skip docstrings and comments)
+  const lines = code.split('\n');
+  let inFuncBody = false;
+  let bodyLines: string[] = [];
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    
+    if (trimmed.startsWith('def ')) {
+      inFuncBody = true;
+      continue;
+    }
+    
+    // Only capture lines inside the function
+    if (inFuncBody && trimmed && !trimmed.match(/^"""|^'''/) && !trimmed.match(/^\s*return\s+/)) {
+      // Remove inline comments
+      const cleanLine = trimmed.split('#')[0];
+      if (cleanLine.trim()) bodyLines.push(cleanLine);
+    }
+  }
+  
+  const bodyCode = bodyLines.join('\n');
+  
+  // Check if solution ONLY calls sorted() without any other logic
+  // A real sorting algorithm needs: loops (for/while), conditionals, or swaps
+  const hasLoop = /\b(for|while)\b/.test(bodyCode);
+  const hasConditional = /\b(if|elif|else)\b/.test(bodyCode);
+  const hasSwap = /\[.*\]\s*=\s*\[.*\]/.test(bodyCode); // tuple/list unpacking for swaps
+  const hasSorted = /\bsorted\s*\(/.test(bodyCode);
+  
+  // If they're calling sorted() but have NO loop, conditional, or swap logic, it's trivial
+  // Allow solutions that use sorted() IF they also have algorithm logic
+  return hasSorted && !hasLoop && !hasConditional && !hasSwap;
 }
 
 // ── Judge code ─────────────────────────────────────────────────────────────
@@ -235,6 +278,16 @@ export async function judgeCode(
   testCases: { input: string; expected_output: string }[],
   fnName?:   string | null
 ): Promise<JudgeResult> {
+  // Reject trivial Python solutions that only use sorted()
+  if (language === 'python' && isPythonTrivialSort(code)) {
+    return {
+      status: 'wrong_answer',
+      output: 'This solution uses only built-in sort functions. Please implement a sorting algorithm yourself to learn.',
+      runtime_ms: 0,
+      results: [],
+    };
+  }
+
   const id  = crypto.randomUUID();
   const dir = path.join(os.tmpdir(), `apollo_${id}`);
   await fs.mkdir(dir, { recursive: true });
@@ -352,6 +405,95 @@ export async function judgeCode(
       runtime_ms: totalMs,
       results,
     };
+  } finally {
+    fs.rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+// ── Run code without judging (for debugging) ───────────────────────────────
+
+export interface RunCodeResult {
+  output:     string;
+  runtime_ms: number;
+  error?:     string;
+}
+
+export async function runCodeRaw(
+  code:     string,
+  language: string,
+  input:    string = '',
+  fnName?:  string | null
+): Promise<RunCodeResult> {
+  const id  = crypto.randomUUID();
+  const dir = path.join(os.tmpdir(), `apollo_${id}`);
+  await fs.mkdir(dir, { recursive: true });
+
+  const start = Date.now();
+
+  try {
+    let output = '';
+    let error  = '';
+
+    if (language === 'javascript' || language === 'typescript') {
+      const ext  = language === 'typescript' ? 'ts' : 'js';
+      const src  = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.${ext}`);
+      const harnessed = buildJsHarness(code, input, fnName ?? null);
+      await fs.writeFile(src, harnessed, 'utf8');
+      const runner = language === 'typescript' ? 'npx tsx' : 'node';
+      try {
+        const { stdout, stderr } = await execAsync(
+          `${runner} "${src}"`,
+          { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+        );
+        output = stdout.trim();
+        error  = stderr.trim();
+      } catch (e: any) {
+        error = (e.stderr || e.message || 'Runtime error').slice(0, 2000);
+      }
+
+    } else if (language === 'python') {
+      const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.py`);
+      await fs.writeFile(src, buildPyHarness(code, input, fnName ?? null), 'utf8');
+      try {
+        const { stdout, stderr } = await execAsync(
+          `python3 "${src}"`,
+          { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+        );
+        output = stdout.trim();
+        error  = stderr.trim();
+      } catch (e: any) {
+        error = (e.stderr || e.message || 'Runtime error').slice(0, 2000);
+      }
+
+    } else if (language === 'cpp' || language === 'c') {
+      const ext = language === 'c' ? 'c' : 'cpp';
+      const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.${ext}`);
+      const bin = path.join(dir, `sol_bin`);
+      const harnessed = buildCppHarness(code, language as 'c' | 'cpp');
+      await fs.writeFile(src, harnessed, 'utf8');
+      const compiler = language === 'c' ? 'gcc' : 'g++ -std=c++17';
+      try {
+        await execAsync(`${compiler} -O2 -o "${bin}" "${src}" -lm`, { timeout: 15000 });
+        const { stdout, stderr } = await execAsync(
+          `echo ${JSON.stringify(input)} | "${bin}"`,
+          { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+        );
+        output = stdout.trim();
+        error  = stderr.trim();
+      } catch (e: any) {
+        error = (e.stderr || e.message || 'Compile or runtime error').slice(0, 2000);
+      }
+
+    } else {
+      error = `Unsupported language: ${language}`;
+    }
+
+    const runtime_ms = Date.now() - start;
+    return { output, runtime_ms, error: error || undefined };
+
+  } catch (e: any) {
+    const runtime_ms = Date.now() - start;
+    return { output: '', runtime_ms, error: e.message || 'Internal error' };
   } finally {
     fs.rm(dir, { recursive: true, force: true }).catch(() => {});
   }

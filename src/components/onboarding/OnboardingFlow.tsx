@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StepsBar } from './StepsBar';
 import { StepCredentials } from './StepCredentials';
 import { StepProfile } from './StepProfile';
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useOnboarding } from '../../hooks/useOnboarding';
 
 export const OnboardingFlow: React.FC = () => {
+  const navigate = useNavigate();
   const {
     step, form, errors, isDone, isSubmitting, submitError,
     setEmail, setPassword,
@@ -22,6 +24,14 @@ export const OnboardingFlow: React.FC = () => {
     connectSocialPlatform,
     goNext, goBack,
   } = useOnboarding();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('apollo_token');
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const LAST_STEP = 6;
 

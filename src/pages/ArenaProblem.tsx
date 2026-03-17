@@ -78,31 +78,37 @@ const markdownComponents: React.ComponentProps<typeof ReactMarkdown>['components
   code: ({ inline, className, children, ...props }: any) => {
     if (inline) {
       return (
-        <code style={{
-          background: '#0F0D09',
-          border: '1px solid rgba(201,168,76,0.15)',
-          padding: '0.1em 0.4em',
-          fontFamily: '"DM Mono", monospace',
-          fontSize: '0.85em',
-          color: '#C9A84C',
-          borderRadius: '2px',
-        }}>
+        <code 
+          className="inline-code"
+          style={{
+            background: 'rgba(201,168,76,0.08)',
+            border: '1px solid rgba(201,168,76,0.15)',
+            padding: '0.15em 0.35em',
+            margin: '0 0.05em',
+            fontFamily: '"DM Mono", monospace',
+            fontSize: '0.9em',
+            color: '#C9A84C',
+            borderRadius: '2px',
+            whiteSpace: 'nowrap',
+          }}>
           {children}
         </code>
       );
     }
     return (
-      <pre style={{
-        background: '#0A0906',
-        border: '1px solid rgba(201,168,76,0.18)',
-        padding: '1rem',
-        borderRadius: '4px',
-        overflowX: 'auto',
-        fontFamily: '"DM Mono", monospace',
-        fontSize: '0.8rem',
-        color: '#F0E8D6',
-        margin: '0.75rem 0',
-      }}>
+      <pre 
+        className="code-block"
+        style={{
+          background: '#0A0906',
+          border: '1px solid rgba(201,168,76,0.18)',
+          padding: '1rem',
+          borderRadius: '4px',
+          overflowX: 'auto',
+          fontFamily: '"DM Mono", monospace',
+          fontSize: '0.8rem',
+          color: '#F0E8D6',
+          margin: '0.75rem 0',
+        }}>
         <code className={className} {...props}>{children}</code>
       </pre>
     );
@@ -154,6 +160,19 @@ const katexStyle = `
   .katex { color: #F0E8D6; font-size: 1.05em; }
   .katex-display { margin: 1rem 0; overflow-x: auto; }
   .katex-display > .katex { color: #F0E8D6; }
+  /* Inline code styling for grouped codeblocks */
+  .inline-code {
+    display: inline;
+    margin: 0 0.05em;
+  }
+  /* Group consecutive inline codes without extra spacing */
+  .inline-code + .inline-code {
+    margin-left: 0;
+  }
+  /* Code block styling */
+  .code-block {
+    display: block;
+  }
 `;
 
 function ProblemDescription({ text }: { text: string }) {

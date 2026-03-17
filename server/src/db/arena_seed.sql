@@ -128,8 +128,8 @@ VALUES (
 );
 
 INSERT INTO test_cases (problem_id, input, expected_output, is_hidden, display_order) VALUES
-((SELECT id FROM problems WHERE slug='fizzbuzz'), '5', '["1","2","Fizz","4","Buzz"]', false, 0),
-((SELECT id FROM problems WHERE slug='fizzbuzz'), '15', '["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11","Fizz","13","14","FizzBuzz"]', false, 1),
+((SELECT id FROM problems WHERE slug='fizzbuzz'), '5', '["1","2","Fizz","4","Buzz"]', true, 0),
+((SELECT id FROM problems WHERE slug='fizzbuzz'), '15', '["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11","Fizz","13","14","FizzBuzz"]', true, 1),
 ((SELECT id FROM problems WHERE slug='fizzbuzz'), '1', '["1"]', true, 2);
 
 -- 9. Code: Binary Search
