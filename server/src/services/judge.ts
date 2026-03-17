@@ -1,0 +1,391 @@
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
+import * as crypto from 'crypto';
+
+const execAsync = promisify(exec);
+const TIMEOUT_MS = 5000;
+const MAX_OUTPUT = 10000;
+
+export interface TestResult {
+  input:    string;
+  expected: string;
+  actual:   string;
+  passed:   boolean;
+  error?:   string;
+}
+
+export interface JudgeResult {
+  status:     'accepted' | 'wrong_answer' | 'runtime_error' | 'compile_error' | 'time_limit';
+  output:     string;
+  expected?:  string;
+  runtime_ms: number;
+  results:    TestResult[];
+}
+
+// ── Normalise output ───────────────────────────────────────────────────────
+
+function normalise(s: string): string {
+  return s.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function outputsMatch(actual: string, expected: string): boolean {
+  const a = normalise(actual);
+  const e = normalise(expected);
+  if (a === e) return true;
+  try {
+    const pa = JSON.parse(actual.trim());
+    const pe = JSON.parse(expected.trim());
+    return JSON.stringify(pa) === JSON.stringify(pe);
+  } catch { /* ignore */ }
+  return false;
+}
+
+// ── Detect input type ──────────────────────────────────────────────────────
+// Returns true if a line looks like space-separated numbers (e.g. "5 3 1 4 2")
+// and NOT a JSON array or object.
+function isSpaceSeparatedNumbers(line: string): boolean {
+  const t = line.trim();
+  if (t.startsWith('[') || t.startsWith('{') || t.startsWith('"')) return false;
+  return /^-?\d+(\.\d+)?(\s+-?\d+(\.\d+)?)*$/.test(t);
+}
+
+// Parse a line into the best JS representation for use as a function argument.
+// Space-separated numbers → array of numbers.
+// Valid JSON → JSON value.
+// Anything else → string.
+function parseInputLine(line: string): string {
+  const t = line.trim();
+  if (isSpaceSeparatedNumbers(t)) {
+    // Convert "5 3 1 4" → [5, 3, 1, 4]
+    const nums = t.split(/\s+/).map(Number);
+    return JSON.stringify(nums);
+  }
+  try {
+    JSON.parse(t);
+    return t; // valid JSON, use as-is
+  } catch {
+    return JSON.stringify(t); // plain string
+  }
+}
+
+// Same for Python — returns a Python literal string.
+function parseInputLinePy(line: string): string {
+  const t = line.trim();
+  if (isSpaceSeparatedNumbers(t)) {
+    const nums = t.split(/\s+/).map(Number);
+    return `[${nums.join(', ')}]`;
+  }
+  try {
+    JSON.parse(t);
+    return t; // valid JSON literal — also valid Python for arrays/objects/primitives
+  } catch {
+    return JSON.stringify(t); // wrap in quotes as a Python string
+  }
+}
+
+// ── Extract function name from starter code ────────────────────────────────
+
+export function extractFunctionName(code: string, language: string): string | null {
+  if (language === 'python') {
+    const m = code.match(/^def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/m);
+    return m?.[1] ?? null;
+  }
+  const patterns = [
+    /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/,
+    /(?:const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:async\s*)?\(/,
+    /([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*:\s*\w/,
+    /(?:public|private|static)?\s+\w+\s+([A-Z][a-zA-Z0-9_]*)\s*\(/,
+  ];
+  for (const p of patterns) {
+    const m = code.match(p);
+    if (m?.[1]) return m[1];
+  }
+  return null;
+}
+
+// ── C/C++ harness builder ──────────────────────────────────────────────────
+// If the code has no main(), wrap it with one that reads stdin, calls the
+// function, and prints the result space-separated.
+
+function hasMain(code: string): boolean {
+  // Match `int main(` or `int main (` outside of comments/strings (good enough)
+  return /\bint\s+main\s*\(/.test(code);
+}
+
+function buildCppHarness(code: string, language: 'c' | 'cpp'): string {
+  if (hasMain(code)) return code;
+
+  // Try to extract the first function name and its return type
+  // Matches e.g.: vector<int> bubbleSort(  or  int myFunc(
+  const fnMatch = code.match(/^[\w:<>*\s]+\s+(\w+)\s*\(/m);
+  const fnName = fnMatch?.[1] ?? null;
+
+  if (!fnName) return code; // can't auto-wrap, return as-is
+
+  if (language === 'cpp') {
+    const needsIostream = !code.includes('<iostream>');
+    const prefix = needsIostream ? '#include <iostream>\n' : '';
+    return `${prefix}${code}
+
+int main() {
+    std::vector<int> arr;
+    int x;
+    while (std::cin >> x) arr.push_back(x);
+
+    auto result = ${fnName}(arr);
+
+    for (int i = 0; i < (int)result.size(); i++) {
+        if (i) std::cout << " ";
+        std::cout << result[i];
+    }
+    std::cout << "\\n";
+    return 0;
+}
+`;
+  } else {
+    // C — simpler, fixed-size array
+    return `${code}
+
+int main() {
+    int arr[100000];
+    int n = 0;
+    while (scanf("%d", &arr[n]) == 1) n++;
+
+    ${fnName}(arr, n);
+
+    for (int i = 0; i < n; i++) {
+        if (i) printf(" ");
+        printf("%d", arr[i]);
+    }
+    printf("\\n");
+    return 0;
+}
+`;
+  }
+}
+
+// ── JS/TS harness builder ──────────────────────────────────────────────────
+
+function buildJsHarness(code: string, input: string, fnName: string | null): string {
+  const lines = input.trim().split('\n');
+  const parsedArgs = lines.map(parseInputLine).join(', ');
+
+  const callExpr = fnName
+    ? `${fnName}(${parsedArgs})`
+    : `(() => {
+        const __m = ${JSON.stringify(code)}.match(/(?:function\\s+|(?:const|let|var)\\s+)([a-zA-Z_][a-zA-Z0-9_]*)\\s*[=(]/);
+        const __name = __m && __m[1];
+        if (!__name || typeof eval(__name) !== 'function') throw new Error('No function found. Make sure your function is declared at the top level.');
+        return eval(__name)(${parsedArgs});
+      })()`;
+
+  return `
+${code}
+
+// ── Apollo harness ───────────────────────────────────────────────────────
+try {
+  const __result = ${callExpr};
+  // If result is an array of numbers, print space-separated for consistency
+  if (Array.isArray(__result) && __result.every(x => typeof x === 'number')) {
+    console.log(__result.join(' '));
+  } else {
+    console.log(JSON.stringify(__result));
+  }
+} catch(e) { process.stderr.write(String(e.message || e)); process.exit(1); }
+`;
+}
+
+// ── Python harness builder ─────────────────────────────────────────────────
+
+function buildPyHarness(code: string, input: string, fnName: string | null): string {
+  const lines = input.trim().split('\n');
+  const parsedArgs = lines.map(parseInputLinePy).join(', ');
+
+  const callExpr = fnName
+    ? `${fnName}(${parsedArgs})`
+    : `list(filter(lambda f: callable(f) and isinstance(f, types.FunctionType), [globals().get(n) for n in globals()]))[0](${parsedArgs})`;
+
+  return `
+import json, sys, types
+
+${code}
+
+if __name__ == '__main__':
+    try:
+        result = ${callExpr}
+        # If result is a list of numbers, print space-separated
+        if isinstance(result, list) and all(isinstance(x, (int, float)) for x in result):
+            print(' '.join(str(x) for x in result))
+        else:
+            print(json.dumps(result))
+    except Exception as e:
+        sys.stderr.write(str(e))
+        sys.exit(1)
+`;
+}
+
+// ── Judge code ─────────────────────────────────────────────────────────────
+
+export async function judgeCode(
+  code:      string,
+  language:  string,
+  testCases: { input: string; expected_output: string }[],
+  fnName?:   string | null
+): Promise<JudgeResult> {
+  const id  = crypto.randomUUID();
+  const dir = path.join(os.tmpdir(), `apollo_${id}`);
+  await fs.mkdir(dir, { recursive: true });
+
+  const results: TestResult[] = [];
+  let totalMs = 0;
+
+  try {
+    for (const tc of testCases) {
+      const start = Date.now();
+      let actual = '';
+      let error  = '';
+
+      try {
+        if (language === 'javascript' || language === 'typescript') {
+          const ext  = language === 'typescript' ? 'ts' : 'js';
+          const src  = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.${ext}`);
+          const harnessed = buildJsHarness(code, tc.input, fnName ?? null);
+          await fs.writeFile(src, harnessed, 'utf8');
+          const runner = language === 'typescript' ? 'npx tsx' : 'node';
+          const { stdout, stderr } = await execAsync(
+            `${runner} "${src}"`,
+            { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+          );
+          actual = stdout.trim();
+          error  = stderr.trim();
+
+        } else if (language === 'python') {
+          const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.py`);
+          await fs.writeFile(src, buildPyHarness(code, tc.input, fnName ?? null), 'utf8');
+          const { stdout, stderr } = await execAsync(
+            `python3 "${src}"`,
+            { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+          );
+          actual = stdout.trim();
+          error  = stderr.trim();
+
+        } else if (language === 'cpp' || language === 'c') {
+          const ext = language === 'c' ? 'c' : 'cpp';
+          const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.${ext}`);
+          const bin = path.join(dir, `sol_bin`);
+          const harnessed = buildCppHarness(code, language as 'c' | 'cpp');
+          await fs.writeFile(src, harnessed, 'utf8');
+          const compiler = language === 'c' ? 'gcc' : 'g++ -std=c++17';
+          try {
+            await execAsync(`${compiler} -O2 -o "${bin}" "${src}" -lm`, { timeout: 15000 });
+          } catch (compileErr: any) {
+            return {
+              status: 'compile_error',
+              output: (compileErr.stderr || compileErr.message || 'Compile failed').slice(0, 2000),
+              runtime_ms: 0,
+              results: [],
+            };
+          }
+          const { stdout, stderr } = await execAsync(
+            `echo ${JSON.stringify(tc.input)} | "${bin}"`,
+            { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+          );
+          actual = stdout.trim();
+          error  = stderr.trim();
+
+        } else if (language === 'csharp') {
+          const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.cs`);
+          await fs.writeFile(src, code, 'utf8');
+          let compiled = false;
+          let compileErr = '';
+          try {
+            await execAsync(`mcs -out:"${dir}/sol.exe" "${src}"`, { timeout: 15000 });
+            compiled = true;
+          } catch (e: any) {
+            const msg = (e.stderr || e.message || '');
+            if (msg.includes('not found') || msg.includes('No such')) {
+              compileErr = 'C# requires Mono. Install with: sudo apt install mono-mcs';
+            } else {
+              compileErr = msg.slice(0, 2000);
+            }
+          }
+          if (!compiled) {
+            return { status: 'compile_error', output: compileErr, runtime_ms: 0, results: [] };
+          }
+          const { stdout, stderr } = await execAsync(
+            `echo ${JSON.stringify(tc.input)} | mono "${dir}/sol.exe"`,
+            { timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT }
+          );
+          actual = stdout.trim();
+          error  = stderr.trim();
+
+        } else {
+          return { status: 'runtime_error', output: `Unsupported language: ${language}`, runtime_ms: 0, results: [] };
+        }
+      } catch (e: any) {
+        const isTimeout = e.killed || (e.message || '').includes('timeout');
+        const errMsg = (e.stderr || e.message || 'Runtime error').slice(0, 500);
+        results.push({
+          input: tc.input, expected: tc.expected_output, actual: '',
+          passed: false, error: isTimeout ? 'Time limit exceeded (5s)' : errMsg,
+        });
+        if (isTimeout) return { status: 'time_limit', output: 'Time limit exceeded', runtime_ms: TIMEOUT_MS, results };
+        continue;
+      }
+
+      totalMs += Date.now() - start;
+      const passed = outputsMatch(actual, tc.expected_output);
+      results.push({ input: tc.input, expected: tc.expected_output, actual, passed, error: error || undefined });
+    }
+
+    const allPassed  = results.every(r => r.passed);
+    const firstFail  = results.find(r => !r.passed);
+    const hasRuntime = results.some(r => r.error && !r.passed);
+
+    return {
+      status:     allPassed ? 'accepted' : hasRuntime && !firstFail?.actual ? 'runtime_error' : 'wrong_answer',
+      output:     allPassed ? 'All test cases passed!' : firstFail?.error || `Expected: ${firstFail?.expected}\nGot: ${firstFail?.actual}`,
+      expected:   firstFail?.expected,
+      runtime_ms: totalMs,
+      results,
+    };
+  } finally {
+    fs.rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+// ── Non-code judges ────────────────────────────────────────────────────────
+
+export function judgeMultipleChoice(answer: string, correctLabel: string): JudgeResult {
+  const passed = normalise(answer) === normalise(correctLabel);
+  return {
+    status: passed ? 'accepted' : 'wrong_answer',
+    output: passed ? 'Correct!' : 'Incorrect. Try again.',
+    runtime_ms: 0,
+    results: [{ input: '', expected: correctLabel, actual: answer, passed }],
+  };
+}
+
+export function judgeFillBlank(answer: string, expected: string): JudgeResult {
+  const passed = normalise(answer) === normalise(expected);
+  return {
+    status: passed ? 'accepted' : 'wrong_answer',
+    output: passed ? 'Correct!' : 'Incorrect. Try again.',
+    runtime_ms: 0,
+    results: [{ input: '', expected, actual: answer, passed }],
+  };
+}
+
+export function judgeOrdering(submitted: string[], correct: string[]): JudgeResult {
+  const passed = submitted.length === correct.length &&
+    submitted.every((v, i) => normalise(v) === normalise(correct[i]));
+  return {
+    status: passed ? 'accepted' : 'wrong_answer',
+    output: passed ? 'Correct order!' : 'Incorrect order.',
+    runtime_ms: 0,
+    results: [{ input: JSON.stringify(submitted), expected: JSON.stringify(correct), actual: JSON.stringify(submitted), passed }],
+  };
+}

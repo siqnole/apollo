@@ -1,46 +1,19 @@
-# Getting Started with Create React App
+# todo
+> python versions of some questions will give full answer sometimes (fizzbuzz, palindrome)
+> should ignore results that use default sort functions
+> table formatting for sec-html-escape doesnt work because of codeblocks.
+> dont load /onboard and redirect if logged in
+> run should provide raw output of the code, only submit runs it through the judge, otherwise it just runs as normal code and gives the output. this is for debugging purposes, so you can see the output of your code without having to submit it to the judge and wait for the results.
+> stop being so careless with returning the value of checks, some checks are more hints than the hints, and especially for html, mentioning by class name just makes it guess and check, not actual learning.
+> threejs questions just check if the html is parsable, not that its correct, please actually check for functions and operations.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+i.e 
+3 check(s) failed: justify-content set, align-items set, height: 200px
+✓.container exists
+✓display: flex
+✗justify-content set — Missing justify-content on .container
+✗align-items set — Add align-items to vertically centre items
+✗height: 200px — Container should be exactly 200px tall
 
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+> **IT TELLS YOU WHAT YOU NEED, IT SHOULD ONLY RETURN WHAT AS WRONG, IF IT DOESNT EXIST IN THE CODE, DONT MENTION IT, LET THE USER FIGURE THAT OUT.**
