@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faKeyboard, faRadio, faPen, faBug, faArrowsUpDown, faNoteSticky, faServer, faDatabase } from '@fortawesome/free-solid-svg-icons';
 import { getProblems, getMe, Problem } from '../services/api';
 
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard', 'Expert'];
@@ -62,17 +64,21 @@ function getLangTag(langs: string[]): { label: string; color: string; bg: string
   return { label: langs.map(l => l === 'javascript' ? 'JS' : l === 'typescript' ? 'TS' : l === 'python' ? 'Py' : l).join('/'), color: '#C9A84C', bg: 'rgba(201,168,76,0.12)' };
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  code:            '⌨️',
-  multiple_choice: '◉',
-  fill_blank:      '✏️',
-  debug:           '🐛',
-  ordering:        '⇅',
-  short_answer:    '📝',
-  shell:           '🖥️',
-  sql:             '🗄️',
-  shell_sql:       '🖥️',
+const TYPE_ICON_MAP: Record<string, any> = {
+  code:            faKeyboard,
+  multiple_choice: faRadio,
+  fill_blank:      faPen,
+  debug:           faBug,
+  ordering:        faArrowsUpDown,
+  short_answer:    faNoteSticky,
+  shell:           faServer,
+  sql:             faDatabase,
+  shell_sql:       faServer,
 };
+
+function renderTypeIcon(type: string): JSX.Element {
+  return <FontAwesomeIcon icon={TYPE_ICON_MAP[type] || faNoteSticky} />;
+}
 
 const gold   = '#C9A84C';
 const muted  = '#8A7D65';
@@ -247,10 +253,7 @@ export default function Arena() {
                     ))}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: muted, alignSelf: 'center' as const }}>{p.category}</div>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: muted, alignSelf: 'center' as const }}>
-                  {TYPE_ICONS[p.problem_type]} {p.problem_type.replace('_', ' ')}
-                </div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: muted, alignSelf: 'center' as const }}>{p.category}</div>\n                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: muted, alignSelf: 'center' as const }}>\n                  {renderTypeIcon(p.problem_type)} | {p.problem_type.replace('_', ' ')}\n                </div>
                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 600, color: gold, alignSelf: 'center' as const }}>+{p.xp_reward}</div>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: dim, alignSelf: 'center' as const }}>{p.solve_count || 0}</div>
               </div>

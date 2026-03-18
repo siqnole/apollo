@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBug } from '@fortawesome/free-solid-svg-icons';
 import { getProblem, submitSolution, runCode, ProblemDetail, SubmissionResult } from '../services/api';
 import { downloadProblemPdf } from '../utils/downloadPdf';
 import CodeMirror from '@uiw/react-codemirror';
@@ -662,7 +664,7 @@ export default function ArenaProblem() {
                     e.currentTarget.style.background = debugMode ? 'rgba(201,168,76,0.15)' : 'transparent';
                   }}
                 >
-                  🐛 Debug
+                  <FontAwesomeIcon icon={faBug} /> | Debug
                 </button>
               )}
             </>

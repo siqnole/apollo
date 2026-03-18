@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCompass, faSwords, faColosseum, faCrown, faBullseye, faChartLine, faLink, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
@@ -10,6 +12,22 @@ import AdminPanel   from './pages/AdminPanel';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
+
+// ── Icon Mapper ──────────────────────────────────────────────────────────────
+const ICON_MAP: Record<string, any> = {
+  compass: faCompass,
+  swords: faSwords,
+  colosseum: faColosseum,
+  crown: faCrown,
+  bullseye: faBullseye,
+  chartLine: faChartLine,
+  link: faLink,
+  trophy: faTrophy,
+};
+
+function renderIcon(iconName: string): JSX.Element {
+  return <FontAwesomeIcon icon={ICON_MAP[iconName] || faCompass} />;
+}
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -23,21 +41,21 @@ const MARQUEE_ITEMS = [
 
 const LEVELS = [
   {
-    icon: '🧭',
+    icon: 'compass',
     name: 'Explorer',
     xp: '0 – 499 XP',
     desc: 'You just entered the arena. Pick your rivals, find your niche, and make your first move.',
     featured: false,
   },
   {
-    icon: '⚔️',
+    icon: 'swords',
     name: 'Contender',
     xp: '500 – 1999 XP',
     desc: "You've drawn blood. Rivals know your name. Now prove it wasn't luck.",
     featured: false,
   },
   {
-    icon: '🏟️',
+    icon: 'colosseum',
     name: 'Gladiator',
     xp: '2000 – 4999 XP',
     desc: "The crowd watches. You've beaten the odds, crushed milestones, and earned your place.",
@@ -45,7 +63,7 @@ const LEVELS = [
     badge: 'Popular',
   },
   {
-    icon: '👑',
+    icon: 'crown',
     name: 'Champion',
     xp: '5000+ XP',
     desc: 'Unmatched. Unchallenged. You are the standard others measure themselves against.',
@@ -73,22 +91,22 @@ const HOW_STEPS = [
 
 const FEATURES = [
   {
-    icon: '🎯',
+    icon: 'bullseye',
     title: 'Rival Matching',
     desc: 'Our algorithm pairs you with developers who match your skill level and interests — close enough to push you, far enough to inspire.',
   },
   {
-    icon: '📈',
+    icon: 'chartLine',
     title: 'XP & Progression',
     desc: 'Every goal completed, every challenge won earns XP. Watch your rank climb and your rivals scramble to keep up.',
   },
   {
-    icon: '🔗',
+    icon: 'link',
     title: 'Social Integration',
     desc: 'Connect GitHub, LinkedIn, Dev.to and more. Your public work feeds your Apollo reputation automatically.',
   },
   {
-    icon: '🏆',
+    icon: 'trophy',
     title: 'Goal Tracking',
     desc: 'Set bold goals — ship a SaaS, hit 1k stars, land a new role. Apollo keeps you accountable and rivals keep you honest.',
   },
@@ -239,8 +257,7 @@ function HomePage() {
               {LEVELS.map((level) => (
                 <div key={level.name} className={`level-card${level.featured ? ' featured' : ''}`}>
                   {level.badge && <span className="level-badge">{level.badge}</span>}
-                  <div className="level-icon">{level.icon}</div>
-                  <div className="level-name">{level.name}</div>
+                  <div className="level-icon">{renderIcon(level.icon)} | {level.name}</div>
                   <div className="level-xp">{level.xp}</div>
                   <p className="level-desc">{level.desc}</p>
                 </div>
@@ -260,8 +277,7 @@ function HomePage() {
           <div className="features-grid">
             {FEATURES.map((f) => (
               <div key={f.title} className="feature-card">
-                <div className="feature-icon">{f.icon}</div>
-                <h3>{f.title}</h3>
+                <div className="feature-icon">{renderIcon(f.icon)} | {f.title}</div>
                 <p>{f.desc}</p>
               </div>
             ))}

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faKeyboard, faRadio, faPen, faBug, faArrowsUpDown, faNoteSticky, faCompass, faSwords, faColosseum, faCrown } from '@fortawesome/free-solid-svg-icons';
 import { getMe, getRivals, UserProfile, Rival } from '../services/api';
 import EditProfileModal from '../components/dashboard/EditProfileModal';
 
@@ -11,12 +13,16 @@ const RANK_XP: Record<string, { min: number; max: number; next: string | null }>
   Champion:  { min: 5000, max: 5000, next: null         },
 };
 
-const RANK_ICONS: Record<string, string> = {
-  Explorer:  '🧭',
-  Contender: '⚔️',
-  Gladiator: '🏟️',
-  Champion:  '👑',
+const RANK_ICON_MAP: Record<string, any> = {
+  Explorer:  faCompass,
+  Contender: faSwords,
+  Gladiator: faColosseum,
+  Champion:  faCrown,
 };
+
+function renderRankIcon(rank: string): JSX.Element {
+  return <FontAwesomeIcon icon={RANK_ICON_MAP[rank] || faCompass} />;
+}
 
 function xpPercent(xp: number, rank: string): number {
   const tier = RANK_XP[rank];
@@ -50,9 +56,14 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 const DIFF_COLORS: Record<string, string> = {
   Easy: '#2AC87D', Medium: '#C9A84C', Hard: '#E05C2A', Expert: '#C82A2A',
 };
-const TYPE_ICONS: Record<string, string> = {
-  code: '⌨', multiple_choice: '◉', fill_blank: '✏', debug: '🐛', ordering: '⇅', short_answer: '📝',
+
+const TYPE_ICON_MAP: Record<string, any> = {
+  code: faKeyboard, multiple_choice: faRadio, fill_blank: faPen, debug: faBug, ordering: faArrowsUpDown, short_answer: faNoteSticky,
 };
+
+function renderTypeIcon(type: string): JSX.Element {
+  return <FontAwesomeIcon icon={TYPE_ICON_MAP[type] || faNoteSticky} />;
+}
 
 function SolvedCard({ profile }: { profile: UserProfile }) {
   const byDiff: Record<string, number> = (profile as any).solved_by_difficulty ?? {};
@@ -74,7 +85,7 @@ function SolvedCard({ profile }: { profile: UserProfile }) {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' as const }}>
           {Object.entries(byType).map(([t, n]) => n > 0 ? (
             <span key={t} title={t.replace('_',' ')} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', color: '#4A4236', letterSpacing: '0.04em' }}>
-              {TYPE_ICONS[t] ?? '?'}<span style={{ color: '#8A7D65' }}>{n}</span>
+              {renderTypeIcon(t)} | <span style={{ color: '#8A7D65' }}>{n}</span>
             </span>
           ) : null)}
         </div>
@@ -204,7 +215,7 @@ export default function Dashboard() {
                 {isMaxRank ? 'Rank status' : 'Progress to next rank'}
               </div>
               <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 600 }}>
-                {isMaxRank ? '👑 Max Rank Achieved' : `${rank} → ${tier.next}`}
+                {isMaxRank ? <>{renderRankIcon(rank)} | Max Rank Achieved</> : `${rank} → ${tier.next}`}
               </div>
             </div>
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.5rem', fontWeight: 700, color: '#C9A84C' }}>
@@ -230,7 +241,7 @@ export default function Dashboard() {
             </div>
             {rivals.length === 0 ? (
               <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '3rem', textAlign: 'center' as const }}>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚔️</div>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}><FontAwesomeIcon icon={faSwords} /></div>
                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', color: '#4A4236', marginBottom: '0.5rem' }}>No rivals yet</div>
                 <div style={{ fontSize: '0.85rem', color: '#4A4236', fontWeight: 300 }}>Rivals appear as other challengers join with similar interests and skill tier.</div>
               </div>

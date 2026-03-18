@@ -18,7 +18,7 @@ export default fp(async (fastify: FastifyInstance) => {
     fastify.log.info('PostgreSQL connected');
     client.release();
   } catch (err) {
-    fastify.log.error('PostgreSQL connection failed:', err instanceof Error ? err : new Error(String(err)));
+    fastify.log.error(err instanceof Error ? err : new Error(`PostgreSQL connection failed: ${String(err)}`));
     process.exit(1);
   }
 
