@@ -149,6 +149,7 @@ export interface Problem {
   xp_reward:           number;
   tags:                string[];
   solve_count:         number;
+  solved:              boolean;
   supported_languages: string[];
 }
 
@@ -190,6 +191,17 @@ export const submitSolution = async (payload: {
   hints_used?:  number;  // number of paid hints revealed (first hint is free)
 }): Promise<SubmissionResult> => {
   const { data } = await api.post<SubmissionResult>('/api/submissions', payload);
+  return data;
+};
+
+export const runCode = async (payload: {
+  language:    string;
+  code:        string;
+  input?:      string;
+  fn_name?:    string;
+  debug_mode?: boolean;
+}): Promise<{ output: string; runtime_ms: number; error: string | null; stderr: string | null }> => {
+  const { data } = await api.post('/api/run', payload);
   return data;
 };
 

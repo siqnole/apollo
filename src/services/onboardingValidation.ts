@@ -19,7 +19,10 @@ export const step1Schema = z.object({
     .min(3, 'Username must be at least 3 characters')
     .max(20, 'Username must be 20 characters or less')
     .regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores allowed'),
-  niche: z.string().max(80).optional(),
+  niche: z
+    .string()
+    .min(5, 'Niche must be at least 5 characters')
+    .max(80, 'Niche must be 80 characters or less'),
   bio:   z.string().max(500).optional(),
 });
 

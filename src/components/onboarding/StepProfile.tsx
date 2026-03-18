@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { OnboardingFormData, OnboardingErrors } from '../../types/onboarding';
+import { OnboardingFormData, OnboardingErrors, NICHE_SUGGESTIONS } from '../../types/onboarding';
 
 interface StepProfileProps {
   form: OnboardingFormData;
@@ -46,15 +46,21 @@ export const StepProfile: React.FC<StepProfileProps> = ({
     <div className="space-y-1">
       <Label htmlFor="niche">
         Your niche{' '}
-        <span className="text-muted-foreground font-normal">(optional)</span>
+        <span className="text-destructive">*</span>
       </Label>
       <Input
         id="niche"
-        placeholder="e.g. Full-stack dev obsessed with algorithms"
+        list="niches"
+        placeholder="e.g. Physics & mechanics enthusiast"
         maxLength={80}
         value={form.niche}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onNicheChange(e.target.value)}
       />
+      <datalist id="niches">
+        {NICHE_SUGGESTIONS.map(niche => (
+          <option key={niche} value={niche} />
+        ))}
+      </datalist>
     </div>
 
     <div className="space-y-1">

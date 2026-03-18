@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProblem, submitSolution, ProblemDetail, SubmissionResult } from '../services/api';
+import { getProblem, submitSolution, runCode, ProblemDetail, SubmissionResult } from '../services/api';
 import { downloadProblemPdf } from '../utils/downloadPdf';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -64,11 +64,17 @@ const STATUS_STYLES: Record<string, { color: string; bg: string; label: string }
 // ── Markdown + KaTeX renderer ──────────────────────────────────────────────
 // Custom components to apply Apollo's dark theme to markdown elements
 const markdownComponents: React.ComponentProps<typeof ReactMarkdown>['components'] = {
-  p: ({ children }) => (
-    <p style={{ margin: '0.75rem 0', lineHeight: 1.75, color: '#D4CCBC', fontWeight: 300 }}>
-      {children}
-    </p>
-  ),
+  p: ({ children, node }) => {
+    // Check if this paragraph contains only a code block to avoid nested p > pre
+    if (node?.children?.length === 1 && node?.children?.[0]?.type === 'element' && node?.children?.[0]?.tagName === 'pre') {
+      return <>{children}</>;
+    }
+    return (
+      <p style={{ margin: '0.75rem 0', lineHeight: 1.75, color: '#D4CCBC', fontWeight: 300 }}>
+        {children}
+      </p>
+    );
+  },
   strong: ({ children }) => (
     <strong style={{ color: '#F0E8D6', fontWeight: 600 }}>{children}</strong>
   ),
@@ -425,6 +431,7 @@ export default function ArenaProblem() {
   const [hintXpPenalty, setHintXpPenalty] = useState(0);
   const [banned,        setBanned]        = useState(() => slug ? getBannedSlugs().has(slug) : false);
   const [downloading,   setDownloading]   = useState(false);
+  const [debugMode,     setDebugMode]     = useState(false);
   const problemPanelRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = useCallback(async () => {
@@ -511,33 +518,53 @@ export default function ArenaProblem() {
       const isCodeLocal = problem.problem_type === 'code' || problem.problem_type === 'debug';
       const isHtmlLocal = problem.problem_type === 'html_css';
       const isSqlLocal  = problem.problem_type === 'sql';
-      const payload: any = { problem_slug: problem.slug };
 
       // Paid hints start from the 2nd hint onwards; first is always free
       const paidHintsUsed = Math.max(0, revealedHints - 1);
-      if (paidHintsUsed > 0) payload.hints_used = paidHintsUsed;
 
-      if (isCodeLocal) {
-        payload.language = language;
-        payload.code     = code;
-        payload.fn_name  = fnName;
-        if (mode === 'run') { payload.run_only = true; }
-      } else if (isHtmlLocal || isSqlLocal) {
-        payload.code = code;
-      } else if (problem.problem_type === 'ordering') {
-        payload.answer = JSON.stringify(ordering.length ? ordering : problem.options.map(o => o.body));
+      if (mode === 'run' && isCodeLocal) {
+        // Use the /api/run endpoint for debugging
+        const runResult = await runCode({
+          language:    language,
+          code:        code,
+          fn_name:     fnName ?? undefined,
+          debug_mode:  debugMode,
+        });
+        setResult({
+          id: '',
+          status: runResult.error ? 'runtime_error' : 'accepted',
+          output: runResult.output || runResult.error || 'No output',
+          runtime_ms: runResult.runtime_ms,
+          test_results: [],
+          xp_awarded: 0,
+        } as SubmissionResult);
       } else {
-        payload.answer = answer;
-      }
+        // Use the submission endpoint for actual judging
+        const payload: any = { problem_slug: problem.slug };
 
-      const res = await submitSolution(payload);
-      setResult(res);
+        if (paidHintsUsed > 0) payload.hints_used = paidHintsUsed;
+
+        if (isCodeLocal) {
+          payload.language = language;
+          payload.code     = code;
+          payload.fn_name  = fnName;
+        } else if (isHtmlLocal || isSqlLocal) {
+          payload.code = code;
+        } else if (problem.problem_type === 'ordering') {
+          payload.answer = JSON.stringify(ordering.length ? ordering : problem.options.map(o => o.body));
+        } else {
+          payload.answer = answer;
+        }
+
+        const res = await submitSolution(payload);
+        setResult(res);
+      }
     } catch (e: any) {
       setResult({ id: '', status: 'runtime_error', output: e?.response?.data?.error ?? 'Submission failed', runtime_ms: 0, test_results: [], xp_awarded: 0 });
     } finally {
       setSubmitting(false);
     }
-  }, [problem, language, code, answer, ordering, submitting, fnName]);
+  }, [problem, language, code, answer, ordering, submitting, fnName, debugMode]);
 
   if (loading || !problem) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg }}>
@@ -600,13 +627,45 @@ export default function ArenaProblem() {
             </select>
           )}
           {(isCode || isSql) && (
-            <button
-              onClick={() => handleSubmit('run')}
-              disabled={submitting || banned}
-              style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', letterSpacing: '0.08em', textTransform: 'uppercase' as const, background: 'transparent', border: `1px solid ${borderBright}`, color: gold, padding: '0.35rem 1rem', cursor: (submitting || banned) ? 'not-allowed' : 'pointer', opacity: (submitting || banned) ? 0.6 : 1 }}
-            >
-              Run
-            </button>
+            <>
+              <button
+                onClick={() => handleSubmit('run')}
+                disabled={submitting || banned}
+                style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', letterSpacing: '0.08em', textTransform: 'uppercase' as const, background: 'transparent', border: `1px solid ${borderBright}`, color: gold, padding: '0.35rem 1rem', cursor: (submitting || banned) ? 'not-allowed' : 'pointer', opacity: (submitting || banned) ? 0.6 : 1 }}
+              >
+                Run
+              </button>
+              {isCode && (
+                <button
+                  onClick={() => setDebugMode(!debugMode)}
+                  title={debugMode ? 'Debug mode: ON - showing detailed output' : 'Debug mode: OFF - minimal output'}
+                  style={{
+                    fontFamily: 'DM Mono, monospace',
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase' as const,
+                    background: debugMode ? 'rgba(201,168,76,0.15)' : 'transparent',
+                    border: `1px solid ${debugMode ? gold : border}`,
+                    color: debugMode ? gold : muted,
+                    padding: '0.35rem 0.75rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = gold;
+                    e.currentTarget.style.color = gold;
+                    if (!debugMode) e.currentTarget.style.background = 'rgba(201,168,76,0.08)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = debugMode ? gold : border;
+                    e.currentTarget.style.color = debugMode ? gold : muted;
+                    e.currentTarget.style.background = debugMode ? 'rgba(201,168,76,0.15)' : 'transparent';
+                  }}
+                >
+                  🐛 Debug
+                </button>
+              )}
+            </>
           )}
           {!isShell && (
             <button
@@ -936,18 +995,38 @@ export default function ArenaProblem() {
                 )}
                 {result && (
                   <>
-                    <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem', color: muted, whiteSpace: 'pre-wrap' as const, marginBottom: '0.75rem' }}>{result.output}</div>
-                    {result.test_results.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                        {result.test_results.map((tr, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.4rem 0.6rem', background: tr.passed ? 'rgba(42,200,125,0.05)' : 'rgba(224,92,42,0.05)', border: `1px solid ${tr.passed ? 'rgba(42,200,125,0.15)' : 'rgba(224,92,42,0.15)'}` }}>
-                            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: tr.passed ? '#2AC87D' : '#E05C2A', flexShrink: 0 }}>{tr.passed ? '✓' : '✗'}</span>
-                            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: tr.passed ? muted : dim }}>
-                              {tr.input}{!tr.passed && tr.error ? ` — ${tr.error}` : ''}
-                            </span>
+                    {/* Show stdout/stderr separately for run mode */}
+                    {!result.test_results || result.test_results.length === 0 ? (
+                      <>
+                        {/* Standard output */}
+                        {result.output && (
+                          <div style={{ marginBottom: '0.5rem' }}>
+                            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: gold, letterSpacing: '0.05em', marginBottom: '0.25rem' }}>STDOUT:</div>
+                            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem', color: muted, whiteSpace: 'pre-wrap' as const, background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '2px', border: `1px solid rgba(201,168,76,0.1)` }}>{result.output}</div>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                        {/* Standard error */}
+                        {(result as any).stderr && (
+                          <div>
+                            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: '#E05C2A', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>STDERR:</div>
+                            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem', color: '#FF6B6B', whiteSpace: 'pre-wrap' as const, background: 'rgba(224,92,42,0.1)', padding: '0.5rem', borderRadius: '2px', border: `1px solid rgba(224,92,42,0.2)` }}>{(result as any).stderr}</div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem', color: muted, whiteSpace: 'pre-wrap' as const, marginBottom: '0.75rem' }}>{result.output}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {result.test_results.map((tr, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.4rem 0.6rem', background: tr.passed ? 'rgba(42,200,125,0.05)' : 'rgba(224,92,42,0.05)', border: `1px solid ${tr.passed ? 'rgba(42,200,125,0.15)' : 'rgba(224,92,42,0.15)'}` }}>
+                              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: tr.passed ? '#2AC87D' : '#E05C2A', flexShrink: 0 }}>{tr.passed ? '✓' : '✗'}</span>
+                              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: tr.passed ? muted : dim }}>
+                                {tr.input}{!tr.passed && tr.error ? ` — ${tr.error}` : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </>
                 )}

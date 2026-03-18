@@ -6,21 +6,25 @@ import { judgeSql } from '../services/sqlJudge';
 export default async function problemRoutes(fastify: FastifyInstance) {
 
   // ── GET /api/problems ────────────────────────────────────────────────────
-  fastify.get('/problems', async (req: FastifyRequest<{
+  fastify.get('/problems', {
+    preHandler: [fastify.authenticateOptional],
+  }, async (req: FastifyRequest<{
     Querystring: { category?: string; difficulty?: string; type?: string; search?: string }
   }>, reply: FastifyReply) => {
     const { category, difficulty, type, search } = req.query;
+    const { userId } = req;
 
     let query = `
       SELECT p.id, p.slug, p.title, p.problem_type, p.difficulty, p.category, p.supported_languages,
              p.xp_reward, p.tags, p.created_at,
-             COUNT(DISTINCT s.id) FILTER (WHERE s.status = 'accepted') AS solve_count
+             COUNT(DISTINCT s.id) FILTER (WHERE s.status = 'accepted') AS solve_count,
+             EXISTS(SELECT 1 FROM submissions s WHERE s.problem_id = p.id AND s.user_id = $1 AND s.status = 'accepted') AS solved
       FROM problems p
       LEFT JOIN submissions s ON s.problem_id = p.id
       WHERE p.active = true
     `;
-    const params: any[] = [];
-    let i = 1;
+    const params: any[] = [userId ?? null];
+    let i = 2;
 
     if (category)   { query += ` AND p.category = $${i++}`;     params.push(category); }
     if (difficulty) { query += ` AND p.difficulty = $${i++}`;   params.push(difficulty); }
@@ -73,21 +77,23 @@ export default async function problemRoutes(fastify: FastifyInstance) {
   fastify.post('/run', {
     preHandler: [fastify.authenticate],
   }, async (req: FastifyRequest, reply: FastifyReply) => {
-    const { language, code, input, fn_name } = req.body as {
-      language: string;
-      code:     string;
-      input?:   string;
-      fn_name?: string;
+    const { language, code, input, fn_name, debug_mode } = req.body as {
+      language:   string;
+      code:       string;
+      input?:     string;
+      fn_name?:   string;
+      debug_mode?: boolean;
     };
 
     if (!code || !language) return reply.status(400).send({ error: 'code and language required' });
 
     try {
-      const result = await runCodeRaw(code, language, input ?? '', fn_name ?? null);
+      const result = await runCodeRaw(code, language, input ?? '', fn_name ?? null, debug_mode ?? false);
       return reply.send({
         output:     result.output,
         runtime_ms: result.runtime_ms,
         error:      result.error ?? null,
+        stderr:     result.stderr ?? null,
       });
     } catch (err) {
       fastify.log.error(err);

@@ -40,6 +40,22 @@ export const INTERESTS = [
   'Algorithms', 'System Design', 'Frontend Dev', 'Backend Dev',
   'Machine Learning', 'Data Science', 'Mobile Dev', 'DevOps',
   'Security', 'Databases', 'Game Dev', 'UI/UX', 'Cloud', 'Blockchain', 'Open Source',
+  'Physics', 'Chemistry', 'Calculus', 'Linear Algebra', 'Differential Equations',
+] as const;
+
+export const NICHE_SUGGESTIONS = [
+  'Full-stack developer',
+  'Data scientist & ML engineer',
+  'Physics & mechanics enthusiast',
+  'Chemistry explorer',
+  'Math scholar - Calculus focused',
+  'STEM polymath',
+  'Algorithm competitive programmer',
+  'DevOps & cloud architect',
+  'Frontend UI/UX specialist',
+  'Game developer',
+  'Blockchain & Web3 builder',
+  'Mobile app developer',
 ] as const;
 
 export const LEVELS: { title: ExperienceLevel; icon: string; desc: string }[] = [

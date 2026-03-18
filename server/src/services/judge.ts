@@ -174,7 +174,7 @@ int main() {
 
 // ── JS/TS harness builder ──────────────────────────────────────────────────
 
-function buildJsHarness(code: string, input: string, fnName: string | null): string {
+function buildJsHarness(code: string, input: string, fnName: string | null, debugMode?: boolean): string {
   const lines = input.trim().split('\n');
   const parsedArgs = lines.map(parseInputLine).join(', ');
 
@@ -187,8 +187,10 @@ function buildJsHarness(code: string, input: string, fnName: string | null): str
         return eval(__name)(${parsedArgs});
       })()`;
 
+  const debugInjection = debugMode ? injectDebugUtilsJs(code) : code;
+
   return `
-${code}
+${debugInjection}
 
 // ── Apollo harness ───────────────────────────────────────────────────────
 try {
@@ -199,13 +201,18 @@ try {
   } else {
     console.log(JSON.stringify(__result));
   }
-} catch(e) { process.stderr.write(String(e.message || e)); process.exit(1); }
+  ${debugMode ? 'if (typeof DEBUG !== "undefined") DEBUG.flushDebug();' : ''}
+} catch(e) { 
+  ${debugMode ? 'if (typeof DEBUG !== "undefined") DEBUG.flushDebug();' : ''}
+  process.stderr.write(String(e.message || e)); 
+  process.exit(1); 
+}
 `;
 }
 
 // ── Python harness builder ─────────────────────────────────────────────────
 
-function buildPyHarness(code: string, input: string, fnName: string | null): string {
+function buildPyHarness(code: string, input: string, fnName: string | null, debugMode?: boolean): string {
   const lines = input.trim().split('\n');
   const parsedArgs = lines.map(parseInputLinePy).join(', ');
 
@@ -213,17 +220,21 @@ function buildPyHarness(code: string, input: string, fnName: string | null): str
     ? `${fnName}(${parsedArgs})`
     : `list(filter(lambda f: callable(f) and isinstance(f, types.FunctionType), [globals().get(n) for n in globals()]))[0](${parsedArgs})`;
 
+  const debugInjection = debugMode ? injectDebugUtilsPy(code) : code;
+
   return `
 import json, sys, types
 
-${code}
+${debugInjection}
 
 if __name__ == '__main__':
     try:
         result = ${callExpr}
         # Always use JSON for output to preserve types (strings vs numbers)
         print(json.dumps(result))
+        ${debugMode ? 'DEBUG.flush_debug()' : ''}
     except Exception as e:
+        ${debugMode ? 'DEBUG.flush_debug()' : ''}
         sys.stderr.write(str(e))
         sys.exit(1)
 `;
@@ -416,13 +427,69 @@ export interface RunCodeResult {
   output:     string;
   runtime_ms: number;
   error?:     string;
+  stderr?:    string;
+}
+
+// ── Debug utilities injection ──────────────────────────────────────────────
+
+function injectDebugUtilsJs(code: string): string {
+  return `
+// ── Apollo Debug Utilities ───────────────────────────────────────────
+const __DEBUG__ = {
+  logs: [],
+  vars: {},
+  inspect(name, value) {
+    const typeStr = Array.isArray(value) ? 'Array' : typeof value === 'object' ? 'Object' : typeof value;
+    const preview = typeof value === 'object' ? JSON.stringify(value).slice(0, 50) : String(value);
+    this.logs.push(\`📍 \${name}: \${typeStr} = \${preview}\`);
+    return value;
+  },
+  log(...args) {
+    this.logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+  },
+  flushDebug() {
+    if (this.logs.length > 0) {
+      console.log('\\n━━━ DEBUG OUTPUT ━━━');
+      this.logs.forEach(l => console.log(l));
+    }
+  }
+};
+const DEBUG = __DEBUG__;
+
+${code}
+`;
+}
+
+function injectDebugUtilsPy(code: string): string {
+  return `
+# ── Apollo Debug Utilities ──────────────────────────────────────────
+class __DEBUG__:
+    logs = []
+    def inspect(self, name, value):
+        type_str = type(value).__name__
+        preview = str(value)[:50]
+        self.logs.append(f'📍 {name}: {type_str} = {preview}')
+        return value
+    def log(self, *args):
+        self.logs.append(' '.join(str(a) for a in args))
+    def flush_debug(self):
+        if self.logs:
+            print('\\n━━━ DEBUG OUTPUT ━━━')
+            for l in self.logs:
+                print(l)
+
+DEBUG = __DEBUG__()
+
+${code}
+`;
 }
 
 export async function runCodeRaw(
   code:     string,
   language: string,
   input:    string = '',
-  fnName?:  string | null
+  fnName?:  string | null,
+  debugMode: boolean = false
 ): Promise<RunCodeResult> {
   const id  = crypto.randomUUID();
   const dir = path.join(os.tmpdir(), `apollo_${id}`);
@@ -437,7 +504,7 @@ export async function runCodeRaw(
     if (language === 'javascript' || language === 'typescript') {
       const ext  = language === 'typescript' ? 'ts' : 'js';
       const src  = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.${ext}`);
-      const harnessed = buildJsHarness(code, input, fnName ?? null);
+      const harnessed = buildJsHarness(code, input, fnName ?? null, debugMode);
       await fs.writeFile(src, harnessed, 'utf8');
       const runner = language === 'typescript' ? 'npx tsx' : 'node';
       try {
@@ -453,7 +520,7 @@ export async function runCodeRaw(
 
     } else if (language === 'python') {
       const src = path.join(dir, `sol_${crypto.randomUUID().slice(0,8)}.py`);
-      await fs.writeFile(src, buildPyHarness(code, input, fnName ?? null), 'utf8');
+      await fs.writeFile(src, buildPyHarness(code, input, fnName ?? null, debugMode), 'utf8');
       try {
         const { stdout, stderr } = await execAsync(
           `python3 "${src}"`,
@@ -489,11 +556,11 @@ export async function runCodeRaw(
     }
 
     const runtime_ms = Date.now() - start;
-    return { output, runtime_ms, error: error || undefined };
+    return { output, runtime_ms, error: error || undefined, stderr: error || undefined };
 
   } catch (e: any) {
     const runtime_ms = Date.now() - start;
-    return { output: '', runtime_ms, error: e.message || 'Internal error' };
+    return { output: '', runtime_ms, error: e.message || 'Internal error', stderr: e.message || 'Internal error' };
   } finally {
     fs.rm(dir, { recursive: true, force: true }).catch(() => {});
   }

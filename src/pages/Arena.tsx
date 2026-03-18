@@ -18,7 +18,7 @@ const TYPES: { value: string; label: string }[] = [
 
 // Map onboarding interests → problem categories
 const INTEREST_TO_CATEGORIES: Record<string, string[]> = {
-  'Algorithms':      ['Algorithms'],
+  'Algorithms':      ['Algorithms', 'Data Structures'],
   'System Design':   ['System Design', 'Systems Programming'],
   'Frontend Dev':    ['Web Development', 'UI/UX'],
   'Backend Dev':     ['Backend Dev', 'Databases', 'Systems Programming'],
@@ -33,6 +33,11 @@ const INTEREST_TO_CATEGORIES: Record<string, string[]> = {
   'Cloud':           ['Cloud', 'DevOps'],
   'Blockchain':      ['Blockchain'],
   'Open Source':     ['Algorithms', 'Data Structures'],
+  'Physics':         ['Physics'],
+  'Chemistry':       ['Chemistry'],
+  'Calculus':        ['Calculus I', 'Calculus II', 'Calculus III'],
+  'Linear Algebra':  ['Linear Algebra'],
+  'Differential Equations': ['Differential Equations'],
 };
 
 const DIFF_COLORS: Record<string, string> = {
@@ -85,6 +90,7 @@ export default function Arena() {
   const [category,       setCategory]       = useState('');
   const [myCategories,   setMyCategories]   = useState<Set<string>>(new Set());
   const [showAll,        setShowAll]        = useState(false);
+  const [showSolved,     setShowSolved]     = useState(false);
 
   useEffect(() => {
     Promise.all([getProblems(), getMe()])
@@ -110,6 +116,7 @@ export default function Arena() {
     if (type && p.problem_type !== type) return false;
     if (category && p.category !== category) return false;
     if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (!showSolved && p.solved) return false;
     return true;
   });
 
@@ -191,6 +198,10 @@ export default function Arena() {
           <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
             <option value="">All Categories</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={showSolved ? 'all' : 'unsolved'} onChange={e => setShowSolved(e.target.value === 'all')} style={{ ...inputStyle, cursor: 'pointer' }}>
+            <option value="unsolved">Unsolved</option>
+            <option value="all">All</option>
           </select>
         </div>
 
