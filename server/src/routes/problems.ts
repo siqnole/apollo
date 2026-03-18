@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { judgeCode, judgeMultipleChoice, judgeFillBlank, judgeOrdering, extractFunctionName, runCodeRaw } from '../services/judge';
 import { judgeHtml } from '../services/htmlJudge';
 import { judgeSql } from '../services/sqlJudge';
+import { judgePythonML } from '../services/pyMLJudge';
 
 export default async function problemRoutes(fastify: FastifyInstance) {
 
@@ -143,6 +144,26 @@ export default async function problemRoutes(fastify: FastifyInstance) {
         if (!code || !language) return reply.status(400).send({ error: 'code and language required' });
         const detectedFn = fn_name ?? (code ? extractFunctionName(code, language) : null);
         judgeResult = await judgeCode(code, language, testCases.rows, detectedFn);
+
+      } else if (problem.problem_type === 'python_code') {
+        if (!code) return reply.status(400).send({ error: 'Python code required' });
+        // For ML problems: code is the student's Python implementation
+        // expected_output from test_cases[0] is a regex pattern to match against stdout
+        const tc = testCases.rows[0];
+        if (!tc) return reply.status(500).send({ error: 'No test case configured for this problem' });
+        const mlResult = await judgePythonML(code, tc.expected_output, problem.slug);
+        judgeResult = {
+          status:     mlResult.status,
+          output:     mlResult.output,
+          runtime_ms: mlResult.runtime_ms,
+          results:    [{
+            input:    'Python ML Code',
+            expected: tc.expected_output,
+            actual:   mlResult.output,
+            passed:   mlResult.status === 'accepted',
+            error:    mlResult.status !== 'accepted' ? mlResult.output : undefined,
+          }],
+        };
 
       } else if (problem.problem_type === 'sql') {
         if (!code) return reply.status(400).send({ error: 'SQL query required' });

@@ -4,6 +4,7 @@ exports.default = problemRoutes;
 const judge_1 = require("../services/judge");
 const htmlJudge_1 = require("../services/htmlJudge");
 const sqlJudge_1 = require("../services/sqlJudge");
+const pyMLJudge_1 = require("../services/pyMLJudge");
 async function problemRoutes(fastify) {
     // ── GET /api/problems ────────────────────────────────────────────────────
     fastify.get('/problems', {
@@ -115,6 +116,28 @@ async function problemRoutes(fastify) {
                     return reply.status(400).send({ error: 'code and language required' });
                 const detectedFn = fn_name ?? (code ? (0, judge_1.extractFunctionName)(code, language) : null);
                 judgeResult = await (0, judge_1.judgeCode)(code, language, testCases.rows, detectedFn);
+            }
+            else if (problem.problem_type === 'python_code') {
+                if (!code)
+                    return reply.status(400).send({ error: 'Python code required' });
+                // For ML problems: code is the student's Python implementation
+                // expected_output from test_cases[0] is a regex pattern to match against stdout
+                const tc = testCases.rows[0];
+                if (!tc)
+                    return reply.status(500).send({ error: 'No test case configured for this problem' });
+                const mlResult = await (0, pyMLJudge_1.judgePythonML)(code, tc.expected_output, problem.slug);
+                judgeResult = {
+                    status: mlResult.status,
+                    output: mlResult.output,
+                    runtime_ms: mlResult.runtime_ms,
+                    results: [{
+                            input: 'Python ML Code',
+                            expected: tc.expected_output,
+                            actual: mlResult.output,
+                            passed: mlResult.status === 'accepted',
+                            error: mlResult.status !== 'accepted' ? mlResult.output : undefined,
+                        }],
+                };
             }
             else if (problem.problem_type === 'sql') {
                 if (!code)
