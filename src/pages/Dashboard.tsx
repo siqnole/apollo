@@ -33,12 +33,14 @@ function xpPercent(xp: number, rank: string): number {
   return Math.min(100, Math.max(0, Math.round(((xp - tier.min) / range) * 100)));
 }
 
-function initials(username: string): string {
+function initials(username?: string): string {
+  if (!username) return 'XX';
   return username.slice(0, 2).toUpperCase();
 }
 
 const AVATAR_COLORS = ['#C9A84C','#E05C2A','#2A7DC8','#2AC87D','#7D2AC8','#C82A2A','#C8922A','#2AC8C8'];
-function avatarColor(username: string): string {
+function avatarColor(username?: string): string {
+  if (!username) return AVATAR_COLORS[0];
   let hash = 0;
   for (const c of username) hash = c.charCodeAt(0) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
