@@ -2,7 +2,9 @@ import axios from 'axios';
 import { FullOnboardingData } from './onboardingValidation';
 import { parseUrlList, getPrimaryUrl } from '../utils/envConfig';
 
-const apiUrls = parseUrlList(process.env.REACT_APP_API_URL, 'http://localhost:3001');
+// In production, use relative paths. In development, default to localhost:3001
+const defaultUrl = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001';
+const apiUrls = parseUrlList(process.env.REACT_APP_API_URL, defaultUrl);
 const primaryApiUrl = getPrimaryUrl(apiUrls);
 
 const api = axios.create({
