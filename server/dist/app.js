@@ -56,10 +56,6 @@ async function buildApp() {
                 root: buildDir,
                 prefix: '/',
             });
-            // Serve index.html for client-side routing (SPA fallback)
-            app.setNotFoundHandler(async (_req, reply) => {
-                reply.sendFile('index.html');
-            });
             app.log.info(`Serving static files from ${buildDir}`);
         }
         catch (err) {
@@ -82,6 +78,19 @@ async function buildApp() {
         const token = app.jwt.sign({ sub: user.id, username: user.username }, { expiresIn: '30d' });
         reply.setCookie('apollo_token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
         return reply.send({ user: { id: user.id, username: user.username, rank: xpToRank(user.xp), xp: user.xp }, token });
+    });
+    // SPA fallback: serve index.html for unmatched routes (client-side routing)
+    app.setNotFoundHandler(async (_req, reply) => {
+        try {
+            const indexPath = path_1.default.join(buildDir, 'index.html');
+            const content = await fs_1.promises.readFile(indexPath, 'utf-8');
+            reply.header('Content-Type', 'text/html; charset=utf-8');
+            reply.send(content);
+        }
+        catch (err) {
+            app.log.error(`Failed to serve index.html: ${err instanceof Error ? err.message : String(err)}`);
+            reply.status(404).send({ error: 'Not found' });
+        }
     });
     app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }));
     return app;
