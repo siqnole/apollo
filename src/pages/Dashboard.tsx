@@ -287,7 +287,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '0.5rem' }}>
-                {safeProfile.interests.map(i => (
+                {safeProfile.interests.filter(Boolean).map(i => (
                   <span key={i} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.05em', padding: '0.3rem 0.75rem', border: '1px solid rgba(201,168,76,0.25)', color: '#8A7D65', textTransform: 'uppercase' as const }}>{i}</span>
                 ))}
               </div>
@@ -298,7 +298,7 @@ export default function Dashboard() {
               {safeProfile.goals.length === 0
                 ? <div style={{ fontSize: '0.8rem', color: '#4A4236', fontWeight: 300 }}>No goals set.</div>
                 : <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.6rem' }}>
-                    {safeProfile.goals.map(g => (
+                    {safeProfile.goals.filter(Boolean).map(g => (
                       <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <div style={{ width: '6px', height: '6px', background: '#C9A84C', flexShrink: 0 }} />
                         <span style={{ fontSize: '0.85rem', color: '#F0E8D6', fontWeight: 300 }}>{g}</span>
@@ -312,7 +312,7 @@ export default function Dashboard() {
               <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem' }}>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1rem' }}>Connected</div>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.5rem' }}>
-                  {safeProfile.socials.map(s => (
+                  {safeProfile.socials.filter(Boolean).map(s => (
                     <div key={s.platform} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <div style={{ width: '6px', height: '6px', background: s.connected ? '#2AC87D' : '#4A4236', flexShrink: 0 }} />
                       <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: s.connected ? '#8A7D65' : '#4A4236', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>{s.platform} {s.connected ? '✓' : 'not connected'}</span>
