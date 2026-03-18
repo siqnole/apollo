@@ -23,10 +23,10 @@ export default fp(async (fastify: FastifyInstance) => {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const client: PoolClient = await Promise.race([
+      const client = await Promise.race([
         pool.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
-      ]);
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+      ]) as PoolClient;
       fastify.log.info('PostgreSQL connected');
       client.release();
       lastErr = null;
