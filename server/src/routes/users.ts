@@ -268,7 +268,11 @@ export default async function userRoutes(fastify: FastifyInstance) {
         [userId]
       );
       // Attach computed rank to each rival
-      const rivals = result.rows.map((r: any) => ({ ...r, rank: xpToRank(r.xp) }));
+      const rivals = result.rows.map((r: any) => ({
+        ...r,
+        interests: Array.isArray(r.interests) ? r.interests.filter(Boolean) : [],
+        rank: xpToRank(r.xp)
+      }));
       return reply.send({ rivals });
     }
   );

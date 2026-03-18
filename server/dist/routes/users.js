@@ -195,7 +195,11 @@ async function userRoutes(fastify) {
          GROUP BY u.id
          ORDER BY u.xp DESC`, [userId]);
         // Attach computed rank to each rival
-        const rivals = result.rows.map((r) => ({ ...r, rank: xpToRank(r.xp) }));
+        const rivals = result.rows.map((r) => ({
+            ...r,
+            interests: Array.isArray(r.interests) ? r.interests.filter(Boolean) : [],
+            rank: xpToRank(r.xp)
+        }));
         return reply.send({ rivals });
     });
     // ── POST /api/users/xp ───────────────────────────────────────────────────
