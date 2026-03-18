@@ -15,7 +15,7 @@ FROM node:20-alpine AS server-builder
 WORKDIR /app
 
 COPY server/package*.json ./server/
-RUN cd server && npm ci --production && cd ..
+RUN cd server && npm ci && cd ..
 
 COPY server/tsconfig.json ./server/
 COPY server/src ./server/src
