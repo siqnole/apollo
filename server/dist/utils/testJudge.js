@@ -5,14 +5,15 @@
  * Usage: ts-node src/utils/testJudge.ts
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 const pg_1 = require("pg");
 const judge_1 = require("../services/judge");
+// Use DATABASE_URL if set, otherwise construct from components
+const connectionString = process.env.DATABASE_URL ||
+    `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'apollo'}`;
 const pool = new pg_1.Pool({
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'apollo',
+    connectionString,
+    connectionTimeoutMillis: 10000,
 });
 /**
  * Generate edge case variants for a given answer

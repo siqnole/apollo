@@ -31,15 +31,34 @@ function normalise(s: string): string {
   return s.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+/**
+ * Smart comparison that handles numeric types specially
+ */
 function outputsMatch(actual: string, expected: string): boolean {
-  const a = normalise(actual);
-  const e = normalise(expected);
+  const actualTrimmed = actual.trim();
+  const expectedTrimmed = expected.trim();
+  
+  // Try numeric comparison first if both look like numbers
+  const actualNum = parseFloat(actualTrimmed);
+  const expectedNum = parseFloat(expectedTrimmed);
+  
+  if (!isNaN(actualNum) && !isNaN(expectedNum)) {
+    // Both are valid numbers - compare numerically with small tolerance
+    return Math.abs(actualNum - expectedNum) < 1e-9;
+  }
+  
+  // Fall back to string normalization for non-numeric answers
+  const a = normalise(actualTrimmed);
+  const e = normalise(expectedTrimmed);
   if (a === e) return true;
+  
+  // Try JSON parsing as fallback
   try {
-    const pa = JSON.parse(actual.trim());
-    const pe = JSON.parse(expected.trim());
+    const pa = JSON.parse(actualTrimmed);
+    const pe = JSON.parse(expectedTrimmed);
     return JSON.stringify(pa) === JSON.stringify(pe);
   } catch { /* ignore */ }
+  
   return false;
 }
 
@@ -579,7 +598,7 @@ export function judgeMultipleChoice(answer: string, correctLabel: string): Judge
 }
 
 export function judgeFillBlank(answer: string, expected: string): JudgeResult {
-  const passed = normalise(answer) === normalise(expected);
+  const passed = outputsMatch(answer, expected);
   return {
     status: passed ? 'accepted' : 'wrong_answer',
     output: passed ? 'Correct!' : 'Incorrect. Try again.',

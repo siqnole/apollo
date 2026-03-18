@@ -53,15 +53,29 @@ function generateEdgeCases(
 
   // For numeric answers, test type variations
   if (/^\d+(\.\d+)?$/.test(answer.trim())) {
-    const num = answer.trim();
-    variants.push({ label: 'As array', value: `[${num}]`, shouldPass: false }); // Should fail
-    variants.push({ label: 'As quoted string', value: `"${num}"`, shouldPass: false }); // Should fail
+    const num = Number(answer.trim());
+    
+    // Only add toFixed variant for simple numbers (whole numbers or 1-2 decimal places)
+    // This avoids introducing rounding error for high-precision decimals
+    const decimalPlaces = (answer.trim().split('.')[1] || '').length;
+    if (decimalPlaces <= 2) {
+      variants.push({ 
+        label: 'With extra decimals (1.00 vs 1)', 
+        value: num.toFixed(2), 
+        shouldPass: true 
+      });
+    }
   }
 
   // For simple numeric strings like "3", "6.0"
   if (/^-?\d+(\.\d+)?$/.test(answer.trim())) {
     const num = Number(answer.trim());
-    variants.push({ label: 'With extra decimals (1.00 vs 1)', value: num.toFixed(2), shouldPass: true }); // Might pass with normalization
+    // Only for integers or numbers with 1 decimal place, add variations
+    const decimalPlaces = (answer.trim().split('.')[1] || '').length;
+    if (decimalPlaces <= 1 && Number.isInteger(num)) {
+      variants.push({ label: 'As array', value: `[${num}]`, shouldPass: false }); // Should fail
+      variants.push({ label: 'As quoted string', value: `"${num}"`, shouldPass: false }); // Should fail
+    }
   }
 
   return variants;

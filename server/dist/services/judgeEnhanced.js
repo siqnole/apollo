@@ -49,36 +49,33 @@ function extractValue(s) {
 }
 /**
  * Compare two values with flexible type coercion
+ * Note: Type boundaries are preserved - "17" (JSON string) ≠ 17 (number)
+ *       But 17 ≈ [17] (array extraction) and 17 ≈ 17.0 (decimal precision)
  */
 function valuesMatch(actual, expected) {
-    // Number comparison
+    // Number comparison (handles 17 ≈ 17.0)
     if (actual.type === 'number' && expected.type === 'number') {
-        // Allow small floating point differences
         return Math.abs(actual.value - expected.value) < 1e-9;
     }
-    // String comparison
+    // String comparison (case-insensitive, whitespace-normalized)
     if (actual.type === 'string' && expected.type === 'string') {
         return actual.value === expected.value;
     }
-    // Cross-type numeric comparison: 17 matches "17" or [17]
-    if ((actual.type === 'number' || actual.type === 'string') &&
-        (expected.type === 'number' || expected.type === 'string')) {
-        const aNum = actual.type === 'number'
-            ? actual.value
-            : !isNaN(Number(actual.value))
-                ? Number(actual.value)
-                : null;
-        const eNum = expected.type === 'number'
-            ? expected.value
-            : !isNaN(Number(expected.value))
-                ? Number(expected.value)
-                : null;
-        if (aNum !== null && eNum !== null) {
-            return Math.abs(aNum - eNum) < 1e-9;
+    // Cross-type: Number ≈ Array (if array has single number)
+    // This handles: 17 matches [17]
+    if (actual.type === 'number' && expected.type === 'array') {
+        if (expected.value.length === 1 && typeof expected.value[0] === 'number') {
+            return Math.abs(actual.value - expected.value[0]) < 1e-9;
         }
-        // Fall back to string comparison
-        return actual.type === 'string' && expected.type === 'string' && actual.value === expected.value;
     }
+    if (actual.type === 'array' && expected.type === 'number') {
+        if (actual.value.length === 1 && typeof actual.value[0] === 'number') {
+            return Math.abs(actual.value[0] - expected.value) < 1e-9;
+        }
+    }
+    // NO cross-type comparison between Number and String types
+    // Reason: "17" (JSON string) is semantically different from 17 (number)
+    // They should be rejected as mismatches
     // Array/object comparison: must be exact same structure
     if (actual.type === 'array' && expected.type === 'array') {
         return JSON.stringify(actual.value) === JSON.stringify(expected.value);
