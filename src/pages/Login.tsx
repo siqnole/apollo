@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSwords } from '@fortawesome/free-solid-svg-icons';
+import { faDumbbell } from '@fortawesome/free-solid-svg-icons';
 import { login } from '../services/api';
 
 type Mode = 'login' | 'register';
@@ -80,7 +80,7 @@ export default function Login() {
 
           {mode === 'register' ? (
             <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}><FontAwesomeIcon icon={faSwords} /></div>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}><FontAwesomeIcon icon={faDumbbell} /></div>
               <p style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', color: '#F0E8D6', marginBottom: '0.5rem' }}>
                 Ready to enter the arena?
               </p>

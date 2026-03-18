@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCompass, faSwords, faColosseum, faCrown, faBullseye, faChartLine, faLink, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { faCompass, faDumbbell, faBuilding, faCrown, faBullseye, faChartLine, faLink, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
@@ -16,8 +16,8 @@ import './App.css';
 // ── Icon Mapper ──────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, any> = {
   compass: faCompass,
-  swords: faSwords,
-  colosseum: faColosseum,
+  swords: faDumbbell,       // was faSwords
+  colosseum: faBuilding,    // was faColosseum
   crown: faCrown,
   bullseye: faBullseye,
   chartLine: faChartLine,

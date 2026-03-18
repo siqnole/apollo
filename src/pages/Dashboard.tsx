@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faKeyboard, faRadio, faPen, faBug, faArrowsUpDown, faNoteSticky, faCompass, faSwords, faColosseum, faCrown } from '@fortawesome/free-solid-svg-icons';
+// Remove faSwords, faColosseum — replace with free equivalents
+import { faCompass, faDumbbell, faBuilding, faCrown, faBullseye, faChartLine, faLink, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import { getMe, getRivals, UserProfile, Rival } from '../services/api';
 import EditProfileModal from '../components/dashboard/EditProfileModal';
 
@@ -15,8 +16,8 @@ const RANK_XP: Record<string, { min: number; max: number; next: string | null }>
 
 const RANK_ICON_MAP: Record<string, any> = {
   Explorer:  faCompass,
-  Contender: faSwords,
-  Gladiator: faColosseum,
+  Contender: faDumbbell,
+  Gladiator: faBuilding,
   Champion:  faCrown,
 };
 
