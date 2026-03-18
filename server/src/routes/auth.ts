@@ -125,7 +125,31 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/google',          async (_req, reply) => reply.type('text/html').send(popupResponse('google', false)));
     fastify.get('/auth/google/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('google', false)));
   }
-
+  // ── Discord ──────────────────────────────────────────────────────
+  if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
+    await fastify.register(oauth2, {
+      name:        'discordOAuth2' as keyof FastifyInstance,
+      scope:       ['identify', 'email'],
+      credentials: {
+        client: { id: process.env.DISCORD_CLIENT_ID, secret: process.env.DISCORD_CLIENT_SECRET },
+        auth: {
+          authorizeHost: 'https://discord.com', authorizePath: '/api/oauth2/authorize',
+          tokenHost:     'https://discord.com', tokenPath:     '/api/oauth2/token',
+        },
+      },
+      startRedirectPath: '/auth/discord',
+      callbackUri:       `${BASE}/auth/discord/callback`,
+    });
+    fastify.get('/auth/discord/callback', async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        await (fastify as any).discordOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
+        return reply.type('text/html').send(popupResponse('discord', true));
+      } catch { return reply.type('text/html').send(popupResponse('discord', false)); }
+    });
+  } else {
+    fastify.get('/auth/discord',          async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false)));
+    fastify.get('/auth/discord/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false)));
+  }
   // ── Dev.to ────────────────────────────────────────────────────────────
   fastify.get('/auth/devto', async (_req: FastifyRequest, reply: FastifyReply) => {
     if (process.env.DEVTO_API_KEY) {

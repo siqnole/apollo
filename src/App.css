@@ -60,9 +60,18 @@ body::before {
   letter-spacing: 0.15em;
   color: var(--gold);
   text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
 .nav-logo span { color: var(--text-muted); font-weight: 400; }
+
+.nav-logo .logo-img {
+  height: 40px;
+  width: auto;
+  max-width: 200px;
+  display: block;
+}
 
 .nav-links {
   display: flex;
@@ -554,6 +563,34 @@ section { position: relative; z-index: 1; }
   font-size: 0.9rem;
   color: var(--text-dim);
   letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+}
+
+.footer-logo .logo-img-footer {
+  height: 32px;
+  width: auto;
+  max-width: 150px;
+  display: block;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.footer-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--gold);
 }
 
 .footer-note {
@@ -562,6 +599,81 @@ section { position: relative; z-index: 1; }
   letter-spacing: 0.1em;
   color: var(--text-dim);
   text-transform: uppercase;
+}
+
+/* ── Legal Pages (TOS & Privacy) ────────────────────────── */
+.legal-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.legal-content {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 6rem 3rem 4rem;
+  width: 100%;
+}
+
+.legal-content h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--gold);
+}
+
+.legal-content .last-updated {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-content section {
+  margin-bottom: 3rem;
+}
+
+.legal-content h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--gold-light);
+}
+
+.legal-content h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--text);
+}
+
+.legal-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.legal-content ul {
+  margin-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.legal-content li {
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.legal-content strong {
+  color: var(--gold);
 }
 
 /* ── Animations ─────────────────────────────────────────── */
@@ -584,6 +696,9 @@ section { position: relative; z-index: 1; }
   .features-grid { grid-template-columns: 1fr; }
   .hero-stats { gap: 2rem; }
   .footer { flex-direction: column; gap: 1rem; text-align: center; }
+  .footer-links { justify-content: center; }
+  .legal-content { padding: 4rem 2rem 3rem; }
+  .legal-content h1 { font-size: 2rem; }
   .levels { padding: 4rem 1.5rem; }
   .level-card { padding: 1.5rem 1.25rem; }
 }

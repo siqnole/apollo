@@ -1,6 +1,6 @@
 export type ExperienceLevel = 'Explorer' | 'Contender' | 'Gladiator' | 'Champion';
 
-export type SocialPlatform = 'gh' | 'li' | 'tw' | 'dev' | 'google';
+export type SocialPlatform = 'gh' | 'li' | 'tw' | 'dev' | 'google' | 'discord';
 
 export interface SocialConnection {
   platform:     SocialPlatform;
@@ -75,9 +75,10 @@ export const GOALS: { title: string; icon: string; sub: string }[] = [
 ];
 
 export const SOCIAL_PLATFORMS: { key: SocialPlatform; name: string; color: string }[] = [
-  { key: 'google', name: 'Google',      color: '#4285F4' },
-  { key: 'gh',     name: 'GitHub',      color: '#24292e' },
-  { key: 'li',     name: 'LinkedIn',    color: '#0A66C2' },
-  { key: 'tw',     name: 'Twitter / X', color: '#1DA1F2' },
-  { key: 'dev',    name: 'Dev.to',      color: '#0a0a0a' },
+  { key: 'google',  name: 'Google',      color: '#4285F4' },
+  { key: 'gh',      name: 'GitHub',      color: '#24292e' },
+  { key: 'li',      name: 'LinkedIn',    color: '#0A66C2' },
+  { key: 'tw',      name: 'Twitter / X', color: '#1DA1F2' },
+  { key: 'discord', name: 'Discord',     color: '#5865F2' },
+  { key: 'dev',     name: 'Dev.to',      color: '#0a0a0a' },
 ];

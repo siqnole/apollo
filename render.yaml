@@ -20,9 +20,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL
-        value: https://apollo.onrender.com  # Update to your domain
+        value: https://apollo.onrender.com  # FIXME: Update to your domain
       - key: SERVER_URL
-        value: https://apollo.onrender.com  # Update to your domain
+        value: https://apollo.onrender.com  # FIXME: Update to your domain
       - key: SERVE_STATIC
         value: "true"
     

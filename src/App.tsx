@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import Dashboard from './pages/Dashboard';
@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import Arena from './pages/Arena';
 import ArenaProblem from './pages/ArenaProblem';
 import AdminPanel   from './pages/AdminPanel';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -149,7 +151,9 @@ function HomePage() {
     <div>
       {/* Nav */}
       <nav className="nav">
-        <a href="/" className="nav-logo">APOLLO<span>.gg</span></a>
+        <a href="/" className="nav-logo">
+          <img src="/apollo.png" alt="Apollo Logo" className="logo-img" />
+        </a>
         <ul className="nav-links">
           <li><a href="#how">How it works</a></li>
           <li><a href="#levels">Levels</a></li>
@@ -162,7 +166,7 @@ function HomePage() {
       <section className="hero">
         <div className="hero-glow" />
         <div className="hero-glow-2" />
-        <div className="hero-tag">Developer Rivalry Platform</div>
+        <div className="hero-tag">Because Iron Sharpens Iron.</div>
         <h1>
           <span className="line-dim">Find Your</span>
           <span className="line-gold">Rival.</span>
@@ -284,7 +288,13 @@ function HomePage() {
 
       {/* Footer */}
       <footer className="footer">
-        <div className="footer-logo">APOLLO.GG</div>
+        <div className="footer-logo">
+          <img src="/apolloBlack.png" alt="Apollo Logo" className="logo-img-footer" />
+        </div>
+        <div className="footer-links">
+          <a href="/tos" className="footer-link">Terms of Service</a>
+          <a href="/privacy" className="footer-link">Privacy Policy</a>
+        </div>
         <div className="footer-note">© 2025 Apollo — Forge your legacy</div>
       </footer>
     </div>
@@ -301,6 +311,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/onboard" element={<OnboardingFlow />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/tos"         element={<TermsOfService />} />
+          <Route path="/terms"       element={<Navigate to="/tos" replace />} />
+          <Route path="/privacy"     element={<PrivacyPolicy />} />
           <Route path="/login" element={<Login />} />
           <Route path="/arena" element={<Arena />} />
           <Route path="/arena/:slug" element={<ArenaProblem />} />

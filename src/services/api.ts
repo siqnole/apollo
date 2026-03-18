@@ -284,13 +284,14 @@ export const getAdminSubmissions = async (params?: {
 
 const OAUTH_POPUP_OPTS = 'width=600,height=700,left=200,top=100';
 
-export const connectSocial = (platform: 'gh' | 'li' | 'tw' | 'dev' | 'google'): Promise<boolean> => {
+export const connectSocial = (platform: 'gh' | 'li' | 'tw' | 'dev' | 'google' | 'discord'): Promise<boolean> => {
   const platformRoutes: Record<string, string> = {
-    gh:     '/auth/github',
-    li:     '/auth/linkedin',
-    tw:     '/auth/twitter',
-    dev:    '/auth/devto',
-    google: '/auth/google',
+    gh:      '/auth/github',
+    li:      '/auth/linkedin',
+    tw:      '/auth/twitter',
+    dev:     '/auth/devto',
+    google:  '/auth/google',
+    discord: '/auth/discord',
   };
 
   return new Promise((resolve) => {
