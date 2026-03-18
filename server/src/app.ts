@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
+import staticPlugin from '@fastify/static';
+import path from 'path';
 import bcrypt from 'bcrypt';
 import dbPlugin from './plugins/db';
 import authPlugin from './plugins/auth';
@@ -33,6 +35,20 @@ export async function buildApp() {
   await app.register(problemRoutes, { prefix: '/api' });
   await app.register(sandboxRoutes, { prefix: '/api' });
   await app.register(adminRoutes,   { prefix: '/api' });
+
+  // Serve static React build
+  const buildDir = path.join(process.cwd(), '../build');
+  if (process.env.NODE_ENV === 'production' || process.env.SERVE_STATIC === 'true') {
+    await app.register(staticPlugin, {
+      root:    buildDir,
+      prefix:  '/',
+    });
+
+    // Serve index.html for client-side routing (SPA fallback)
+    app.get('*', async (_req, reply) => {
+      reply.sendFile('index.html');
+    });
+  }
 
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password } = req.body as { email: string; password: string };

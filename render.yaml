@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: apollo
+    runtime: docker
+    region: oregon
+    plan: starter
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: apollo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://apollo.onrender.com  # Update to your domain
+      - key: SERVER_URL
+        value: https://apollo.onrender.com  # Update to your domain
+      - key: SERVE_STATIC
+        value: "true"
+    
+    # Health check
+    healthCheckPath: /health
+    
+    # Docker build settings
+    dockerfilePath: Dockerfile
+    
+    # Build command runs automatically based on Dockerfile
+
+databases:
+  - name: apollo-db
+    ipAllowList: []
+    databaseName: apollo
+    user: postgres
+    region: oregon
+    plan: starter
