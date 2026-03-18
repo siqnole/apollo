@@ -170,8 +170,16 @@ export default function Dashboard() {
     </div>
   );
 
-  const rank     = profile.rank;
-  const pct      = xpPercent(profile.xp, rank);
+  // Ensure required arrays exist
+  const safeProfile = {
+    ...profile,
+    interests: Array.isArray(profile.interests) ? profile.interests : [],
+    goals: Array.isArray(profile.goals) ? profile.goals : [],
+    socials: Array.isArray(profile.socials) ? profile.socials : [],
+  };
+
+  const rank     = safeProfile.rank;
+  const pct      = xpPercent(safeProfile.xp, rank);
   const tier     = RANK_XP[rank] ?? { min: 0, max: 500, next: 'Contender' };
   const isMaxRank = tier.next === null;
 
@@ -191,8 +199,8 @@ export default function Dashboard() {
           >
             {renderRankIcon(rank)} {rank}
           </button>
-          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor(profile.username), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', fontWeight: 500, color: '#fff', border: '2px solid rgba(201,168,76,0.4)' }}>
-            {initials(profile.username)}
+          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor(safeProfile.username), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', fontWeight: 500, color: '#fff', border: '2px solid rgba(201,168,76,0.4)' }}>
+            {initials(safeProfile.username)}
           </div>
           <button onClick={() => navigate('/arena')} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, background: 'transparent', border: '1px solid rgba(201,168,76,0.25)', color: '#7A6230', padding: '0.4rem 0.9rem', cursor: 'pointer' }}>
             The Ring ⚔
@@ -209,17 +217,17 @@ export default function Dashboard() {
         <div style={{ marginBottom: '3rem' }}>
           <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.75rem' }}>Welcome</div>
           <h1 style={{ fontFamily: 'Cinzel, serif', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, lineHeight: 1, margin: 0 }}>
-            Hey <span style={{ color: '#C9A84C' }}>{profile.username}</span>, ready to compete?  
+            Hey <span style={{ color: '#C9A84C' }}>{safeProfile.username}</span>, ready to compete?  
           </h1>
-          {profile.niche && <p style={{ color: '#8A7D65', fontSize: '0.95rem', marginTop: '0.75rem', fontWeight: 300 }}>{profile.niche}</p>}
+          {safeProfile.niche && <p style={{ color: '#8A7D65', fontSize: '0.95rem', marginTop: '0.75rem', fontWeight: 300 }}>{safeProfile.niche}</p>}
         </div>
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: '1px', background: 'rgba(201,168,76,0.18)', border: '1px solid rgba(201,168,76,0.18)', marginBottom: '3rem', flexWrap: 'wrap' as const }}>
-          <StatCard label="Rank"      value={renderRankIcon(rank)} sub={`skill tier: ${profile.skill_tier}`} />
-          <StatCard label="XP"        value={profile.xp} sub={`${tier.min}–${tier.max ?? '∞'} range`} />
-          <SolvedCard profile={profile} />
-          <StatCard label="Interests" value={profile.interests.length} sub="active rings" />
+          <StatCard label="Rank"      value={renderRankIcon(rank)} sub={`skill tier: ${safeProfile.skill_tier}`} />
+          <StatCard label="XP"        value={safeProfile.xp} sub={`${tier.min}–${tier.max ?? '∞'} range`} />
+          <SolvedCard profile={safeProfile} />
+          <StatCard label="Interests" value={safeProfile.interests.length} sub="active rings" />
         </div>
 
         {/* XP Bar */}
@@ -279,7 +287,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '0.5rem' }}>
-                {profile.interests.map(i => (
+                {safeProfile.interests.map(i => (
                   <span key={i} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.05em', padding: '0.3rem 0.75rem', border: '1px solid rgba(201,168,76,0.25)', color: '#8A7D65', textTransform: 'uppercase' as const }}>{i}</span>
                 ))}
               </div>
@@ -287,10 +295,10 @@ export default function Dashboard() {
 
             <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem' }}>
               <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1rem' }}>My Goals</div>
-              {profile.goals.length === 0
+              {safeProfile.goals.length === 0
                 ? <div style={{ fontSize: '0.8rem', color: '#4A4236', fontWeight: 300 }}>No goals set.</div>
                 : <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.6rem' }}>
-                    {profile.goals.map(g => (
+                    {safeProfile.goals.map(g => (
                       <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <div style={{ width: '6px', height: '6px', background: '#C9A84C', flexShrink: 0 }} />
                         <span style={{ fontSize: '0.85rem', color: '#F0E8D6', fontWeight: 300 }}>{g}</span>
@@ -300,11 +308,11 @@ export default function Dashboard() {
               }
             </div>
 
-            {profile.socials.length > 0 && (
+            {safeProfile.socials.length > 0 && (
               <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem' }}>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1rem' }}>Connected</div>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.5rem' }}>
-                  {profile.socials.map(s => (
+                  {safeProfile.socials.map(s => (
                     <div key={s.platform} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <div style={{ width: '6px', height: '6px', background: s.connected ? '#2AC87D' : '#4A4236', flexShrink: 0 }} />
                       <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: s.connected ? '#8A7D65' : '#4A4236', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>{s.platform} {s.connected ? '✓' : 'not connected'}</span>
@@ -317,20 +325,20 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
-    {rankModal && profile && (
+    {rankModal && safeProfile && (
       <div onClick={() => setRankModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
         <div onClick={e => e.stopPropagation()} style={{ background: '#0F0D09', border: '1px solid rgba(201,168,76,0.3)', padding: '2.5rem', width: '100%', maxWidth: '480px', position: 'relative' }}>
           <button onClick={() => setRankModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#4A4236', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
               <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>Your Path</div>
           <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.4rem', fontWeight: 700, color: '#C9A84C', marginBottom: '2rem' }}>
-            {renderRankIcon(profile.rank)} {profile.rank} · {profile.xp} XP
+            {renderRankIcon(safeProfile.rank)} {safeProfile.rank} · {safeProfile.xp} XP
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0' }}>
             {Object.entries(RANK_XP).map(([r, t], idx) => {
-              const isCurrentRank = r === profile.rank;
-              const isPast = Object.keys(RANK_XP).indexOf(r) < Object.keys(RANK_XP).indexOf(profile.rank);
+              const isCurrentRank = r === safeProfile.rank;
+              const isPast = Object.keys(RANK_XP).indexOf(r) < Object.keys(RANK_XP).indexOf(safeProfile.rank);
               const isFuture = !isCurrentRank && !isPast;
-              const rankPct = isPast ? 100 : isCurrentRank ? xpPercent(profile.xp, r) : 0;
+              const rankPct = isPast ? 100 : isCurrentRank ? xpPercent(safeProfile.xp, r) : 0;
               return (
                 <div key={r} style={{ padding: '1.25rem 0', borderBottom: idx < Object.keys(RANK_XP).length - 1 ? '1px solid rgba(201,168,76,0.08)' : 'none', opacity: isFuture ? 0.4 : 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isCurrentRank ? '0.75rem' : '0.25rem' }}>
@@ -350,8 +358,8 @@ export default function Dashboard() {
                         <div style={{ height: '100%', width: `${rankPct}%`, background: 'linear-gradient(90deg, #7A6230, #C9A84C)', borderRadius: '2px', transition: 'width 0.8s ease' }} />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.58rem', color: '#4A4236' }}>{profile.xp} XP</span>
-                        {t.next && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.58rem', color: '#4A4236' }}>{t.max - profile.xp} XP to {t.next}</span>}
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.58rem', color: '#4A4236' }}>{safeProfile.xp} XP</span>
+                        {t.next && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.58rem', color: '#4A4236' }}>{t.max - safeProfile.xp} XP to {t.next}</span>}
                       </div>
                     </>
                   )}
@@ -362,9 +370,9 @@ export default function Dashboard() {
         </div>
       </div>
     )}
-    {editing && profile && (
+    {editing && safeProfile && (
       <EditProfileModal
-        profile={profile!}
+        profile={safeProfile!}
         onClose={() => setEditing(false)}
         onSaved={(updated) => setProfile(updated)}
       />
