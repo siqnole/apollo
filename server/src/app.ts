@@ -23,7 +23,9 @@ function xpToRank(xp: number): string {
 
 export async function buildApp() {
   const app = Fastify({
-    logger: { transport: { target: 'pino-pretty', options: { colorize: true } } },
+    logger: process.env.NODE_ENV === 'production' 
+      ? true  // Simple JSON logging in production
+      : { transport: { target: 'pino-pretty', options: { colorize: true } } },
   });
 
   const clientUrls = parseUrlList(process.env.CLIENT_URL, 'http://localhost:3000');
