@@ -25,7 +25,7 @@ const ICON_MAP: Record<string, any> = {
   trophy: faTrophy,
 };
 
-function renderIcon(iconName: string): JSX.Element {
+function renderIcon(iconName: string): React.JSX.Element {
   return <FontAwesomeIcon icon={ICON_MAP[iconName] || faCompass} />;
 }
 

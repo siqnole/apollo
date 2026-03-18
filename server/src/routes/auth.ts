@@ -1,14 +1,16 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import oauth2, { OAuth2Namespace } from '@fastify/oauth2';
 import https from 'https';
+import { parseUrlList, getPrimaryUrl } from '../utils/envConfig';
 
-function popupResponse(platform: string, success: boolean): string {
+function popupResponse(platform: string, success: boolean, clientUrls: string[]): string {
+  const primaryClientUrl = getPrimaryUrl(clientUrls);
   const payload = success
     ? JSON.stringify({ type: 'oauth_success', platform })
     : JSON.stringify({ type: 'oauth_error', platform });
   return `<!DOCTYPE html><html><head><title>Apollo OAuth</title></head><body>
 <script>
-  if (window.opener) window.opener.postMessage(${payload}, '${process.env.CLIENT_URL}');
+  if (window.opener) window.opener.postMessage(${payload}, '${primaryClientUrl}');
   window.close();
 </script></body></html>`;
 }
@@ -23,7 +25,9 @@ function httpsGet(url: string, headers: Record<string, string>): Promise<any> {
   });
 }
 
-const BASE = process.env.SERVER_URL ?? 'http://localhost:3001';
+const serverUrls = parseUrlList(process.env.SERVER_URL, 'http://localhost:3001');
+const BASE = getPrimaryUrl(serverUrls);
+const clientUrls = parseUrlList(process.env.CLIENT_URL, 'http://localhost:3000');
 
 export default async function authRoutes(fastify: FastifyInstance) {
 
@@ -42,12 +46,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/github/callback', async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await (fastify as any).githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
-        return reply.type('text/html').send(popupResponse('gh', true));
-      } catch { return reply.type('text/html').send(popupResponse('gh', false)); }
+        return reply.type('text/html').send(popupResponse('gh', true, clientUrls));
+      } catch { return reply.type('text/html').send(popupResponse('gh', false, clientUrls)); }
     });
   } else {
-    fastify.get('/auth/github',          async (_req, reply) => reply.type('text/html').send(popupResponse('gh', false)));
-    fastify.get('/auth/github/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('gh', false)));
+    fastify.get('/auth/github',          async (_req, reply) => reply.type('text/html').send(popupResponse('gh', false, clientUrls)));
+    fastify.get('/auth/github/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('gh', false, clientUrls)));
   }
 
   // ── LinkedIn ──────────────────────────────────────────────────────────
@@ -68,12 +72,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/linkedin/callback', async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await (fastify as any).linkedinOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
-        return reply.type('text/html').send(popupResponse('li', true));
-      } catch { return reply.type('text/html').send(popupResponse('li', false)); }
+        return reply.type('text/html').send(popupResponse('li', true, clientUrls));
+      } catch { return reply.type('text/html').send(popupResponse('li', false, clientUrls)); }
     });
   } else {
-    fastify.get('/auth/linkedin',          async (_req, reply) => reply.type('text/html').send(popupResponse('li', false)));
-    fastify.get('/auth/linkedin/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('li', false)));
+    fastify.get('/auth/linkedin',          async (_req, reply) => reply.type('text/html').send(popupResponse('li', false, clientUrls)));
+    fastify.get('/auth/linkedin/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('li', false, clientUrls)));
   }
 
   // ── Twitter ───────────────────────────────────────────────────────────
@@ -95,12 +99,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/twitter/callback', async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await (fastify as any).twitterOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
-        return reply.type('text/html').send(popupResponse('tw', true));
-      } catch { return reply.type('text/html').send(popupResponse('tw', false)); }
+        return reply.type('text/html').send(popupResponse('tw', true, clientUrls));
+      } catch { return reply.type('text/html').send(popupResponse('tw', false, clientUrls)); }
     });
   } else {
-    fastify.get('/auth/twitter',          async (_req, reply) => reply.type('text/html').send(popupResponse('tw', false)));
-    fastify.get('/auth/twitter/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('tw', false)));
+    fastify.get('/auth/twitter',          async (_req, reply) => reply.type('text/html').send(popupResponse('tw', false, clientUrls)));
+    fastify.get('/auth/twitter/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('tw', false, clientUrls)));
   }
 
   // ── Google ────────────────────────────────────────────────────────────
@@ -118,12 +122,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/google/callback', async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await (fastify as any).googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
-        return reply.type('text/html').send(popupResponse('google', true));
-      } catch { return reply.type('text/html').send(popupResponse('google', false)); }
+        return reply.type('text/html').send(popupResponse('google', true, clientUrls));
+      } catch { return reply.type('text/html').send(popupResponse('google', false, clientUrls)); }
     });
   } else {
-    fastify.get('/auth/google',          async (_req, reply) => reply.type('text/html').send(popupResponse('google', false)));
-    fastify.get('/auth/google/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('google', false)));
+    fastify.get('/auth/google',          async (_req, reply) => reply.type('text/html').send(popupResponse('google', false, clientUrls)));
+    fastify.get('/auth/google/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('google', false, clientUrls)));
   }
   // ── Discord ──────────────────────────────────────────────────────
   if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
@@ -143,21 +147,21 @@ export default async function authRoutes(fastify: FastifyInstance) {
     fastify.get('/auth/discord/callback', async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await (fastify as any).discordOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
-        return reply.type('text/html').send(popupResponse('discord', true));
-      } catch { return reply.type('text/html').send(popupResponse('discord', false)); }
+        return reply.type('text/html').send(popupResponse('discord', true, clientUrls));
+      } catch { return reply.type('text/html').send(popupResponse('discord', false, clientUrls)); }
     });
   } else {
-    fastify.get('/auth/discord',          async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false)));
-    fastify.get('/auth/discord/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false)));
+    fastify.get('/auth/discord',          async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false, clientUrls)));
+    fastify.get('/auth/discord/callback', async (_req, reply) => reply.type('text/html').send(popupResponse('discord', false, clientUrls)));
   }
   // ── Dev.to ────────────────────────────────────────────────────────────
   fastify.get('/auth/devto', async (_req: FastifyRequest, reply: FastifyReply) => {
     if (process.env.DEVTO_API_KEY) {
       try {
         await httpsGet('https://dev.to/api/users/me', { 'api-key': process.env.DEVTO_API_KEY });
-        return reply.type('text/html').send(popupResponse('dev', true));
+        return reply.type('text/html').send(popupResponse('dev', true, clientUrls));
       } catch { /* fall through */ }
     }
-    return reply.type('text/html').send(popupResponse('dev', false));
+    return reply.type('text/html').send(popupResponse('dev', false, clientUrls));
   });
 }

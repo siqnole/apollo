@@ -76,7 +76,7 @@ const TYPE_ICON_MAP: Record<string, any> = {
   shell_sql:       faServer,
 };
 
-function renderTypeIcon(type: string): JSX.Element {
+function renderTypeIcon(type: string): React.JSX.Element {
   return <FontAwesomeIcon icon={TYPE_ICON_MAP[type] || faNoteSticky} />;
 }
 

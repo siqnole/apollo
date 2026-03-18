@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // Remove faSwords, faColosseum — replace with free equivalents
-import { faCompass, faDumbbell, faBuilding, faCrown, faBullseye, faChartLine, faLink, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { faCompass, faDumbbell, faBuilding, faCrown, faBullseye, faChartLine, faLink, faTrophy, faKeyboard, faRadio, faPen, faBug, faArrowsUpDown, faNoteSticky } from '@fortawesome/free-solid-svg-icons';
 import { getMe, getRivals, UserProfile, Rival } from '../services/api';
 import EditProfileModal from '../components/dashboard/EditProfileModal';
 
@@ -21,7 +21,7 @@ const RANK_ICON_MAP: Record<string, any> = {
   Champion:  faCrown,
 };
 
-function renderRankIcon(rank: string): JSX.Element {
+function renderRankIcon(rank: string): React.JSX.Element {
   return <FontAwesomeIcon icon={RANK_ICON_MAP[rank] || faCompass} />;
 }
 
@@ -44,7 +44,7 @@ function avatarColor(username: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: 'clamp(1rem, 2vw, 1.5rem) clamp(1rem, 3vw, 2rem)', flex: 1, minWidth: 'clamp(120px, 50vw, 140px)' }}>
       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>{label}</div>
@@ -62,7 +62,7 @@ const TYPE_ICON_MAP: Record<string, any> = {
   code: faKeyboard, multiple_choice: faRadio, fill_blank: faPen, debug: faBug, ordering: faArrowsUpDown, short_answer: faNoteSticky,
 };
 
-function renderTypeIcon(type: string): JSX.Element {
+function renderTypeIcon(type: string): React.JSX.Element {
   return <FontAwesomeIcon icon={TYPE_ICON_MAP[type] || faNoteSticky} />;
 }
 
@@ -110,7 +110,7 @@ function RivalCard({ rival }: { rival: Rival & { rank: string } }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
           <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 600, color: '#F0E8D6' }}>{rival.username}</span>
           <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', color: '#7A6230', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
-            {RANK_ICONS[rival.rank]} {rival.rank}
+            {renderRankIcon(rival.rank)} {rival.rank}
           </span>
         </div>
         {rival.niche && <div style={{ fontSize: '0.75rem', color: '#8A7D65', marginBottom: '0.4rem', whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{rival.niche}</div>}
@@ -175,7 +175,7 @@ export default function Dashboard() {
             onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
             onMouseLeave={e => (e.currentTarget.style.color = '#8A7D65')}
           >
-            {RANK_ICONS[rank]} {rank}
+            {renderRankIcon(rank)} {rank}
           </button>
           <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: avatarColor(profile.username), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', fontWeight: 500, color: '#fff', border: '2px solid rgba(201,168,76,0.4)' }}>
             {initials(profile.username)}
@@ -202,7 +202,7 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: '1px', background: 'rgba(201,168,76,0.18)', border: '1px solid rgba(201,168,76,0.18)', marginBottom: '3rem', flexWrap: 'wrap' as const }}>
-          <StatCard label="Rank"      value={`${RANK_ICONS[rank]} ${rank}`} sub={`skill tier: ${profile.skill_tier}`} />
+          <StatCard label="Rank"      value={renderRankIcon(rank)} sub={`skill tier: ${profile.skill_tier}`} />
           <StatCard label="XP"        value={profile.xp} sub={`${tier.min}–${tier.max ?? '∞'} range`} />
           <SolvedCard profile={profile} />
           <StatCard label="Interests" value={profile.interests.length} sub="active arenas" />
@@ -242,7 +242,7 @@ export default function Dashboard() {
             </div>
             {rivals.length === 0 ? (
               <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '3rem', textAlign: 'center' as const }}>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}><FontAwesomeIcon icon={faSwords} /></div>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}><FontAwesomeIcon icon={faDumbbell} /></div>
                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', color: '#4A4236', marginBottom: '0.5rem' }}>No rivals yet</div>
                 <div style={{ fontSize: '0.85rem', color: '#4A4236', fontWeight: 300 }}>Rivals appear as other challengers join with similar interests and skill tier.</div>
               </div>
@@ -309,7 +309,7 @@ export default function Dashboard() {
           <button onClick={() => setRankModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#4A4236', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
           <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>Rank Progression</div>
           <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.4rem', fontWeight: 700, color: '#C9A84C', marginBottom: '2rem' }}>
-            {RANK_ICONS[profile.rank]} {profile.rank} — {profile.xp} XP
+            {renderRankIcon(profile.rank)} {profile.rank} — {profile.xp} XP
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0' }}>
             {Object.entries(RANK_XP).map(([r, t], idx) => {
@@ -321,7 +321,7 @@ export default function Dashboard() {
                 <div key={r} style={{ padding: '1.25rem 0', borderBottom: idx < Object.keys(RANK_XP).length - 1 ? '1px solid rgba(201,168,76,0.08)' : 'none', opacity: isFuture ? 0.4 : 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isCurrentRank ? '0.75rem' : '0.25rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <span style={{ fontSize: '1.1rem' }}>{RANK_ICONS[r]}</span>
+                      <span style={{ fontSize: '1.1rem' }}>{renderRankIcon(r)}</span>
                       <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: isCurrentRank ? 700 : 400, color: isCurrentRank ? '#C9A84C' : isPast ? '#8A7D65' : '#4A4236' }}>{r}</span>
                       {isCurrentRank && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.15em', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.4)', padding: '0.1rem 0.4rem' }}>CURRENT</span>}
                       {isPast && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.55rem', color: '#2AC87D' }}>✓</span>}

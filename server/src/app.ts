@@ -12,6 +12,7 @@ import authRoutes from './routes/auth';
 import problemRoutes from './routes/problems';
 import sandboxRoutes from './routes/sandbox';
 import adminRoutes   from './routes/admin';
+import { parseUrlList } from './utils/envConfig';
 
 function xpToRank(xp: number): string {
   if (xp >= 5000) return 'Champion';
@@ -25,7 +26,8 @@ export async function buildApp() {
     logger: { transport: { target: 'pino-pretty', options: { colorize: true } } },
   });
 
-  await app.register(cors, { origin: process.env.CLIENT_URL ?? 'http://localhost:3000', credentials: true });
+  const clientUrls = parseUrlList(process.env.CLIENT_URL, 'http://localhost:3000');
+  await app.register(cors, { origin: clientUrls, credentials: true });
   await app.register(cookie);
   await app.register(jwt, { secret: process.env.JWT_SECRET ?? 'dev_secret_change_me', cookie: { cookieName: 'apollo_token', signed: false } });
   await app.register(dbPlugin);

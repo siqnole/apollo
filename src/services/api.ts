@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { FullOnboardingData } from './onboardingValidation';
+import { parseUrlList, getPrimaryUrl } from '../utils/envConfig';
+
+const apiUrls = parseUrlList(process.env.REACT_APP_API_URL, 'http://localhost:3001');
+const primaryApiUrl = getPrimaryUrl(apiUrls);
 
 const api = axios.create({
-  baseURL:         process.env.REACT_APP_API_URL ?? 'http://localhost:3001',
+  baseURL:         primaryApiUrl,
   withCredentials: true,
 });
 
@@ -295,7 +299,7 @@ export const connectSocial = (platform: 'gh' | 'li' | 'tw' | 'dev' | 'google' | 
   };
 
   return new Promise((resolve) => {
-    const url = `${process.env.REACT_APP_API_URL ?? 'http://localhost:3001'}${platformRoutes[platform]}`;
+    const url = `${primaryApiUrl}${platformRoutes[platform]}`;
     const popup = window.open(url, `Connect ${platform}`, OAUTH_POPUP_OPTS);
 
     const handler = (event: MessageEvent) => {
