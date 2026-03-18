@@ -253,7 +253,10 @@ export default function Arena() {
                     ))}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: muted, alignSelf: 'center' as const }}>{p.category}</div>\n                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: muted, alignSelf: 'center' as const }}>\n                  {renderTypeIcon(p.problem_type)} | {p.problem_type.replace('_', ' ')}\n                </div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: muted, alignSelf: 'center' as const }}>{p.category}</div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: muted, alignSelf: 'center' as const }}>
+                  {renderTypeIcon(p.problem_type)} | {p.problem_type.replace('_', ' ')}
+                </div>
                 <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 600, color: gold, alignSelf: 'center' as const }}>+{p.xp_reward}</div>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem', color: dim, alignSelf: 'center' as const }}>{p.solve_count || 0}</div>
               </div>

@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test:judge": "tsx src/utils/testJudge.ts",
+    "test:judge:watch": "tsx watch src/utils/testJudge.ts",
+    "test:enhanced": "tsx src/utils/testJudgeEnhanced.ts",
+    "test:all": "npm run test:enhanced && npm run test:judge"
   },
   "dependencies": {
     "@fastify/cookie": "^9.0.0",
