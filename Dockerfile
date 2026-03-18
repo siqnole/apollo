@@ -5,7 +5,7 @@ FROM node:20-alpine AS client-builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY . .
 RUN npm run build
@@ -27,7 +27,7 @@ WORKDIR /app
 
 # Install production dependencies for server
 COPY server/package*.json ./server/
-RUN cd server && npm ci --production && cd ..
+RUN cd server && npm install --omit=dev && cd ..
 
 # Copy compiled server
 COPY --from=server-builder /app/server/dist ./server/dist
