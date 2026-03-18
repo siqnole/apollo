@@ -8,7 +8,8 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Arena from './pages/Arena';
 import ArenaProblem from './pages/ArenaProblem';
-import AdminPanel   from './pages/AdminPanel';
+import AdminPanel from './pages/AdminPanel';
+import NotFound from './pages/NotFound';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
@@ -334,6 +335,7 @@ function App() {
           <Route path="/arena" element={<Arena />} />
           <Route path="/arena/:slug" element={<ArenaProblem />} />
           <Route path="/admin"       element={<AdminPanel />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

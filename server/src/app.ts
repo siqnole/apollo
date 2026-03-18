@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
 import staticPlugin from '@fastify/static';
 import path from 'path';
+import { promises as fs } from 'fs';
 import bcrypt from 'bcrypt';
 import dbPlugin from './plugins/db';
 import authPlugin from './plugins/auth';
@@ -41,17 +42,25 @@ export async function buildApp() {
   await app.register(adminRoutes,   { prefix: '/api' });
 
   // Serve static React build
-  const buildDir = path.join(process.cwd(), '../build');
-  if (process.env.NODE_ENV === 'production' || process.env.SERVE_STATIC === 'true') {
-    await app.register(staticPlugin, {
-      root:    buildDir,
-      prefix:  '/',
-    });
+  // From dist/app.js, go up 2 levels to project root, then to build folder
+  const buildDir = path.join(__dirname, '../../build');
+  
+  if ((process.env.NODE_ENV === 'production' || process.env.SERVE_STATIC === 'true')) {
+    try {
+      await fs.access(buildDir);
+      await app.register(staticPlugin, {
+        root:    buildDir,
+        prefix:  '/',
+      });
 
-    // Serve index.html for client-side routing (SPA fallback)
-    app.get('*', async (_req, reply) => {
-      reply.sendFile('index.html');
-    });
+      // Serve index.html for client-side routing (SPA fallback)
+      app.setNotFoundHandler(async (_req, reply) => {
+        reply.sendFile('index.html');
+      });
+      app.log.info(`Serving static files from ${buildDir}`);
+    } catch (err) {
+      app.log.warn(`Build directory not found at ${buildDir}, skipping static serving`);
+    }
   }
 
   app.post('/api/auth/login', async (req, reply) => {

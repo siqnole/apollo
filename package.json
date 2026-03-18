@@ -45,7 +45,11 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
-    "eject": "craco eject"
+    "eject": "craco eject",
+    "dev": "bash run-dev.sh",
+    "prod": "bash run-prod.sh",
+    "monitor": "bash monitor-prod.sh",
+    "logs": "bash logs-prod.sh"
   },
   "eslintConfig": {
     "extends": [
