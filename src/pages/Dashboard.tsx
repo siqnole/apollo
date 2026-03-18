@@ -39,9 +39,9 @@ function avatarColor(username: string): string {
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem 2rem', flex: 1, minWidth: '140px' }}>
+    <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: 'clamp(1rem, 2vw, 1.5rem) clamp(1rem, 3vw, 2rem)', flex: 1, minWidth: 'clamp(120px, 50vw, 140px)' }}>
       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>{label}</div>
-      <div style={{ fontFamily: 'Cinzel, serif', fontSize: '2rem', fontWeight: 700, color: '#C9A84C', lineHeight: 1 }}>{value}</div>
+      <div style={{ fontFamily: 'Cinzel, serif', fontSize: 'clamp(1.2rem, 4vw, 2rem)', fontWeight: 700, color: '#C9A84C', lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: '#4A4236', marginTop: '0.35rem', letterSpacing: '0.1em' }}>{sub}</div>}
     </div>
   );
@@ -177,7 +177,7 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '8rem 3rem 6rem' }}>
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(5rem, 8vw, 8rem) clamp(1rem, 3vw, 3rem) 6rem' }}>
 
         {/* Header */}
         <div style={{ marginBottom: '3rem' }}>

@@ -38,7 +38,6 @@ export default fp(async (fastify: FastifyInstance) => {
       }
     }
   );
-});
 
   fastify.decorate(
     'authenticateOptional',

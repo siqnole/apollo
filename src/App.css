@@ -47,7 +47,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 3rem;
+  padding: 1.25rem clamp(1rem, 3vw, 3rem);
   background: rgba(10,9,6,0.8);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -107,8 +107,9 @@ body::before {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 8rem 2rem 6rem;
+  padding: clamp(6rem, 8vw, 8rem) clamp(1rem, 3vw, 2rem) 4rem;
   overflow: hidden;
+  width: 100%;
 }
 
 .hero-glow {
@@ -218,12 +219,14 @@ body::before {
 
 .hero-stats {
   display: flex;
-  gap: 4rem;
+  gap: clamp(1.5rem, 4vw, 4rem);
   justify-content: center;
-  margin-top: 5rem;
-  padding-top: 3rem;
+  flex-wrap: wrap;
+  margin-top: 3rem;
+  padding-top: 2rem;
   border-top: 1px solid var(--border);
   animation: fadeUp 0.6s 0.4s ease both;
+  width: 100%;
 }
 
 .stat-val {
@@ -306,7 +309,7 @@ section { position: relative; z-index: 1; }
 
 /* ── How it works ───────────────────────────────────────── */
 .how {
-  padding: 8rem 3rem;
+  padding: clamp(4rem, 8vw, 8rem) clamp(1rem, 3vw, 3rem);
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -369,7 +372,7 @@ section { position: relative; z-index: 1; }
 
 /* ── Levels ─────────────────────────────────────────────── */
 .levels {
-  padding: 8rem 3rem;
+  padding: clamp(4rem, 8vw, 8rem) clamp(1rem, 3vw, 3rem);
   background: var(--bg-2);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -447,7 +450,7 @@ section { position: relative; z-index: 1; }
 
 /* ── Features ───────────────────────────────────────────── */
 .features {
-  padding: 8rem 3rem;
+  padding: clamp(4rem, 8vw, 8rem) clamp(1rem, 3vw, 3rem);
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -501,7 +504,7 @@ section { position: relative; z-index: 1; }
 
 /* ── CTA ────────────────────────────────────────────────── */
 .cta-section {
-  padding: 8rem 3rem;
+  padding: clamp(4rem, 8vw, 8rem) clamp(1rem, 3vw, 3rem);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -577,8 +580,17 @@ section { position: relative; z-index: 1; }
   .nav { padding: 1rem 1.5rem; }
   .nav-links { display: none; }
   .how-grid { grid-template-columns: 1fr; }
-  .levels-grid { grid-template-columns: repeat(2, 1fr); }
+  .levels-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .features-grid { grid-template-columns: 1fr; }
   .hero-stats { gap: 2rem; }
   .footer { flex-direction: column; gap: 1rem; text-align: center; }
+  .levels { padding: 4rem 1.5rem; }
+  .level-card { padding: 1.5rem 1.25rem; }
+}
+
+@media (max-width: 640px) {
+  .levels-grid { grid-template-columns: 1fr; }
+  .level-card { padding: 1.25rem 1rem; }
+  .level-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+  .section-title { font-size: clamp(1.5rem, 4vw, 2rem); }
 }
