@@ -242,9 +242,9 @@ export default async function sandboxRoutes(fastify: FastifyInstance) {
   // ── DELETE /api/sandbox/:session_id ──────────────────────────────────────
   fastify.delete('/sandbox/:session_id', {
     preHandler: [fastify.authenticate],
-  }, async (req: FastifyRequest<{ Params: { session_id: string } }>, reply: FastifyReply) => {
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const { userId } = req;
-    const { session_id } = req.params;
+    const { session_id } = (req as FastifyRequest<{ Params: { session_id: string } }>).params;
     const session = sessions.get(session_id);
     if (session && session.userId === userId) {
       await destroyContainer(session.containerId);

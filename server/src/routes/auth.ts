@@ -29,8 +29,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // ── GitHub ────────────────────────────────────────────────────────────
   if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
-    await fastify.register(oauth2, {
-      name:        'githubOAuth2' as keyof FastifyInstance,
+    await (fastify as any).register(oauth2, {
+      name:        'githubOAuth2',
       scope:       ['read:user'],
       credentials: {
         client: { id: process.env.GITHUB_CLIENT_ID, secret: process.env.GITHUB_CLIENT_SECRET },
@@ -52,8 +52,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // ── LinkedIn ──────────────────────────────────────────────────────────
   if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
-    await fastify.register(oauth2, {
-      name:        'linkedinOAuth2' as keyof FastifyInstance,
+    await (fastify as any).register(oauth2, {
+      name:        'linkedinOAuth2',
       scope:       ['r_liteprofile', 'r_emailaddress'],
       credentials: {
         client: { id: process.env.LINKEDIN_CLIENT_ID, secret: process.env.LINKEDIN_CLIENT_SECRET },
@@ -78,8 +78,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // ── Twitter ───────────────────────────────────────────────────────────
   if (process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET) {
-    await fastify.register(oauth2, {
-      name:        'twitterOAuth2' as keyof FastifyInstance,
+    await (fastify as any).register(oauth2, {
+      name:        'twitterOAuth2',
       scope:       ['tweet.read', 'users.read'],
       credentials: {
         client: { id: process.env.TWITTER_CLIENT_ID, secret: process.env.TWITTER_CLIENT_SECRET },
@@ -105,8 +105,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // ── Google ────────────────────────────────────────────────────────────
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    await fastify.register(oauth2, {
-      name:        'googleOAuth2' as keyof FastifyInstance,
+    await (fastify as any).register(oauth2, {
+      name:        'googleOAuth2',
       scope:       ['profile', 'email'],
       credentials: {
         client: { id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET },
@@ -127,8 +127,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
   }
   // ── Discord ──────────────────────────────────────────────────────
   if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
-    await fastify.register(oauth2, {
-      name:        'discordOAuth2' as keyof FastifyInstance,
+    await (fastify as any).register(oauth2, {
+      name:        'discordOAuth2',
       scope:       ['identify', 'email'],
       credentials: {
         client: { id: process.env.DISCORD_CLIENT_ID, secret: process.env.DISCORD_CLIENT_SECRET },

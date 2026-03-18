@@ -8,11 +8,12 @@ export default async function problemRoutes(fastify: FastifyInstance) {
   // ── GET /api/problems ────────────────────────────────────────────────────
   fastify.get('/problems', {
     preHandler: [fastify.authenticateOptional],
-  }, async (req: FastifyRequest<{
-    Querystring: { category?: string; difficulty?: string; type?: string; search?: string }
-  }>, reply: FastifyReply) => {
-    const { category, difficulty, type, search } = req.query;
-    const { userId } = req;
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const typedReq = req as FastifyRequest<{
+      Querystring: { category?: string; difficulty?: string; type?: string; search?: string }
+    }>;
+    const { category, difficulty, type, search } = typedReq.query;
+    const { userId } = typedReq;
 
     let query = `
       SELECT p.id, p.slug, p.title, p.problem_type, p.difficulty, p.category, p.supported_languages,
@@ -257,9 +258,9 @@ export default async function problemRoutes(fastify: FastifyInstance) {
   // ── GET /api/submissions/:id ─────────────────────────────────────────────
   fastify.get('/submissions/:id', {
     preHandler: [fastify.authenticate],
-  }, async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const { userId } = req;
-    const { id }     = req.params;
+    const { id }     = (req as FastifyRequest<{ Params: { id: string } }>).params;
     const result = await fastify.db.query(
       `SELECT id, status, output, runtime_ms, test_results, xp_awarded, created_at
        FROM submissions WHERE id = $1 AND user_id = $2`,
@@ -272,9 +273,9 @@ export default async function problemRoutes(fastify: FastifyInstance) {
   // ── GET /api/submissions ─────────────────────────────────────────────────
   fastify.get('/submissions', {
     preHandler: [fastify.authenticate],
-  }, async (req: FastifyRequest<{ Querystring: { problem_slug?: string } }>, reply: FastifyReply) => {
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const { userId }       = req;
-    const { problem_slug } = req.query;
+    const { problem_slug } = (req as FastifyRequest<{ Querystring: { problem_slug?: string } }>).query;
 
     let query = `
       SELECT s.id, s.status, s.language, s.runtime_ms, s.xp_awarded, s.created_at, p.slug, p.title
