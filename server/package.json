@@ -11,7 +11,6 @@
     "@fastify/cookie": "^9.0.0",
     "@fastify/cors": "^9.0.0",
     "@fastify/jwt": "^8.0.0",
-    "@fastify/oauth2": "^7.0.0",
     "@fastify/static": "^7.0.0",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.0.0",
