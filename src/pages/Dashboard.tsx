@@ -144,9 +144,21 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [navigate]);
 
+  const loadingMessages = [
+    'Talking with your coach…',
+    'Wobbling to your corner…',
+    'Catching your breath…',
+    'Getting the crowd hyped…',
+    'Moving in silence...',
+    'Sharpening your skills...',
+    'Sizing up the competition...',
+    'Getting my game face on...'
+  ];
+  const loadingMsg = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0A0906' }}>
-      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: '#7A6230', letterSpacing: '0.2em', textTransform: 'uppercase' as const }}>Entering the arena…</div>
+      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', color: '#7A6230', letterSpacing: '0.2em', textTransform: 'uppercase' as const }}>{loadingMsg}</div>
     </div>
   );
 
@@ -181,10 +193,10 @@ export default function Dashboard() {
             {initials(profile.username)}
           </div>
           <button onClick={() => navigate('/arena')} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, background: 'transparent', border: '1px solid rgba(201,168,76,0.25)', color: '#7A6230', padding: '0.4rem 0.9rem', cursor: 'pointer' }}>
-            Arena ⚔
+            The Ring ⚔
           </button>
           <button onClick={() => { localStorage.removeItem('apollo_token'); navigate('/'); }} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, background: 'transparent', border: '1px solid rgba(201,168,76,0.2)', color: '#4A4236', padding: '0.4rem 0.9rem', cursor: 'pointer' }}>
-            Leave Arena
+            Leave The Ring
           </button>
         </div>
       </nav>
@@ -193,9 +205,9 @@ export default function Dashboard() {
 
         {/* Header */}
         <div style={{ marginBottom: '3rem' }}>
-          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.75rem' }}>Your Arena</div>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.75rem' }}>Welcome</div>
           <h1 style={{ fontFamily: 'Cinzel, serif', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, lineHeight: 1, margin: 0 }}>
-            Welcome back, <span style={{ color: '#C9A84C' }}>{profile.username}</span>.
+            Hey <span style={{ color: '#C9A84C' }}>{profile.username}</span>, ready to compete?  
           </h1>
           {profile.niche && <p style={{ color: '#8A7D65', fontSize: '0.95rem', marginTop: '0.75rem', fontWeight: 300 }}>{profile.niche}</p>}
         </div>
@@ -205,7 +217,7 @@ export default function Dashboard() {
           <StatCard label="Rank"      value={renderRankIcon(rank)} sub={`skill tier: ${profile.skill_tier}`} />
           <StatCard label="XP"        value={profile.xp} sub={`${tier.min}–${tier.max ?? '∞'} range`} />
           <SolvedCard profile={profile} />
-          <StatCard label="Interests" value={profile.interests.length} sub="active arenas" />
+          <StatCard label="Interests" value={profile.interests.length} sub="active rings" />
         </div>
 
         {/* XP Bar */}
@@ -238,7 +250,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '2rem', alignItems: 'start' }}>
           <div>
             <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1.25rem' }}>
-              Your Rivals — {rivals.length} matched
+              Your Rivals · {rivals.length} matched
             </div>
             {rivals.length === 0 ? (
               <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '3rem', textAlign: 'center' as const }}>
@@ -256,7 +268,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '1.5rem' }}>
             <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230' }}>Your Arenas</div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230' }}>My Rings</div>
                 <button onClick={() => setEditing(true)} style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, background: 'transparent', border: '1px solid rgba(201,168,76,0.25)', color: '#7A6230', padding: '0.25rem 0.65rem', cursor: 'pointer', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; e.currentTarget.style.color = '#C9A84C'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)'; e.currentTarget.style.color = '#7A6230'; }}
@@ -272,7 +284,7 @@ export default function Dashboard() {
             </div>
 
             <div style={{ border: '1px solid rgba(201,168,76,0.18)', padding: '1.5rem' }}>
-              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1rem' }}>Active Goals</div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '1rem' }}>My Goals</div>
               {profile.goals.length === 0
                 ? <div style={{ fontSize: '0.8rem', color: '#4A4236', fontWeight: 300 }}>No goals set.</div>
                 : <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0.6rem' }}>
@@ -293,7 +305,7 @@ export default function Dashboard() {
                   {profile.socials.map(s => (
                     <div key={s.platform} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <div style={{ width: '6px', height: '6px', background: s.connected ? '#2AC87D' : '#4A4236', flexShrink: 0 }} />
-                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: s.connected ? '#8A7D65' : '#4A4236', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>{s.platform} {s.connected ? '✓' : '—'}</span>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: s.connected ? '#8A7D65' : '#4A4236', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>{s.platform} {s.connected ? '✓' : 'not connected'}</span>
                     </div>
                   ))}
                 </div>
@@ -307,9 +319,9 @@ export default function Dashboard() {
       <div onClick={() => setRankModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
         <div onClick={e => e.stopPropagation()} style={{ background: '#0F0D09', border: '1px solid rgba(201,168,76,0.3)', padding: '2.5rem', width: '100%', maxWidth: '480px', position: 'relative' }}>
           <button onClick={() => setRankModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#4A4236', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
-          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>Rank Progression</div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7A6230', marginBottom: '0.5rem' }}>Your Path</div>
           <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.4rem', fontWeight: 700, color: '#C9A84C', marginBottom: '2rem' }}>
-            {renderRankIcon(profile.rank)} {profile.rank} — {profile.xp} XP
+            {renderRankIcon(profile.rank)} {profile.rank} · {profile.xp} XP
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '0' }}>
             {Object.entries(RANK_XP).map(([r, t], idx) => {
@@ -323,7 +335,7 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <span style={{ fontSize: '1.1rem' }}>{renderRankIcon(r)}</span>
                       <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: isCurrentRank ? 700 : 400, color: isCurrentRank ? '#C9A84C' : isPast ? '#8A7D65' : '#4A4236' }}>{r}</span>
-                      {isCurrentRank && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.15em', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.4)', padding: '0.1rem 0.4rem' }}>CURRENT</span>}
+                      {isCurrentRank && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.15em', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.4)', padding: '0.1rem 0.4rem' }}>you are here</span>}
                       {isPast && <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.55rem', color: '#2AC87D' }}>✓</span>}
                     </div>
                     <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: '#4A4236' }}>
