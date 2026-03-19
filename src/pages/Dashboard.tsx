@@ -139,10 +139,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('apollo_token');
-    if (!token) { navigate('/'); return; }
+    console.log('[DASHBOARD] Token check:', { hasToken: !!token });
+    if (!token) {
+      console.error('[DASHBOARD] No token found, redirecting to home');
+      navigate('/');
+      return;
+    }
+    console.log('[DASHBOARD] Loading profile and rivals...');
     Promise.all([getMe(), getRivals()])
-      .then(([me, rv]) => { setProfile(me); setRivals(rv as any); })
-      .catch(() => setError('Failed to load your profile.'))
+      .then(([me, rv]) => {
+        console.log('[DASHBOARD] Profile loaded successfully');
+        setProfile(me);
+        setRivals(rv as any);
+      })
+      .catch((err) => {
+        console.error('[DASHBOARD] Error loading profile:', err);
+        setError('Failed to load your profile.')
+      })
       .finally(() => setLoading(false));
   }, [navigate]);
 

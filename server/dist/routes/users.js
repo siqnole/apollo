@@ -72,6 +72,7 @@ async function userRoutes(fastify) {
         const { email, password, username, niche, bio, skill_tier, interests, goals, socials } = req.body;
         // Accept both 'level' and 'skill_tier' from frontend during transition
         const tier = skill_tier ?? req.body.level;
+        fastify.log.info(`[ONBOARD] Attempt: ${email} / ${username}`);
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
             return reply.status(400).send({ error: 'Valid email required' });
         if (!password || password.length < 8)
@@ -116,15 +117,18 @@ async function userRoutes(fastify) {
             await client.query('COMMIT');
             const matchedRivals = await findRivals(fastify.db, user.id, tier, interests);
             const token = fastify.jwt.sign({ sub: user.id, username: user.username }, { expiresIn: '30d' });
+            fastify.log.info(`[ONBOARD] Success: ${user.username} (${user.id})`);
             setAuthCookie(reply, token);
-            return reply.status(201).send({
+            const response = {
                 user: {
                     id: user.id, username: user.username,
                     rank: xpToRank(0), // always Explorer on signup
                     xp: 0, matchedRivals,
                 },
                 token,
-            });
+            };
+            fastify.log.debug(JSON.stringify({ ['/api/users/onboard']: response }));
+            return reply.status(201).send(response);
         }
         catch (err) {
             await client.query('ROLLBACK');
@@ -138,23 +142,33 @@ async function userRoutes(fastify) {
     // ── POST /api/users/login (also registered in app.ts) ───────────────────
     fastify.post('/login', async (req, reply) => {
         const { email, password } = req.body;
+        fastify.log.info(`[LOGIN_USERS] Attempt: ${email}`);
         if (!email || !password)
             return reply.status(400).send({ error: 'Email and password required' });
         const result = await fastify.db.query(`SELECT id, username, skill_tier, xp, password_hash FROM users WHERE email = $1`, [email.toLowerCase()]);
-        if (result.rows.length === 0)
+        if (result.rows.length === 0) {
+            fastify.log.warn(`[LOGIN_USERS] User not found: ${email}`);
             return reply.status(401).send({ error: 'Invalid email or password' });
+        }
         const user = result.rows[0];
-        if (!user.password_hash)
+        if (!user.password_hash) {
+            fastify.log.warn(`[LOGIN_USERS] User has no password hash: ${email}`);
             return reply.status(401).send({ error: 'This account uses social login' });
+        }
         const valid = await bcrypt_1.default.compare(password, user.password_hash);
-        if (!valid)
+        if (!valid) {
+            fastify.log.warn(`[LOGIN_USERS] Invalid password for: ${email}`);
             return reply.status(401).send({ error: 'Invalid email or password' });
+        }
         const token = fastify.jwt.sign({ sub: user.id, username: user.username }, { expiresIn: '30d' });
+        fastify.log.info(`[LOGIN_USERS] Success: ${user.username} (${user.id})`);
         setAuthCookie(reply, token);
-        return reply.send({
+        const response = {
             user: { id: user.id, username: user.username, rank: xpToRank(user.xp), xp: user.xp },
             token,
-        });
+        };
+        fastify.log.debug(JSON.stringify({ ['/api/users/login']: response }));
+        return reply.send(response);
     });
     // ── GET /api/users/me ────────────────────────────────────────────────────
     fastify.get('/me', { preHandler: [fastify.authenticate] }, async (req, reply) => {

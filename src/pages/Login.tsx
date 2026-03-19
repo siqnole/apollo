@@ -22,10 +22,18 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await login(email, password);
+      const response = await login(email, password);
+      console.log('[LOGIN_SUBMIT] Response:', response);
+      if (!response.token || !localStorage.getItem('apollo_token')) {
+        setError('Authentication failed - token not stored');
+        return;
+      }
+      console.log('[LOGIN_SUBMIT] Token verified, navigating to dashboard');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Something went wrong');
+      const errorMsg = err?.response?.data?.error ?? err?.message ?? 'Something went wrong';
+      console.error('[LOGIN_SUBMIT] Error:', errorMsg);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

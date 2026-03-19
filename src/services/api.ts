@@ -40,9 +40,20 @@ if (process.env.REACT_APP_ADMIN_KEY) {
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
 export const login = async (email: string, password: string) => {
-  const { data } = await api.post('/api/auth/login', { email, password });
-  if (data.token) storeToken(data.token);
-  return data;
+  try {
+    const { data } = await api.post('/api/auth/login', { email, password });
+    console.log('[LOGIN] Response received:', { hasToken: !!data.token, userKeys: data.user ? Object.keys(data.user) : 'no user' });
+    if (!data.token) {
+      console.error('[LOGIN] No token in response:', data);
+      throw new Error('Server did not return authentication token');
+    }
+    storeToken(data.token);
+    console.log('[LOGIN] Token stored successfully');
+    return data;
+  } catch (err: any) {
+    console.error('[LOGIN] Error:', err.message, err.response?.data);
+    throw err;
+  }
 };
 
 export const logout = () => {
@@ -74,9 +85,20 @@ export interface OnboardingResponse {
 export const submitOnboarding = async (
   payload: OnboardingPayload
 ): Promise<OnboardingResponse> => {
-  const { data } = await api.post<OnboardingResponse>('/api/users/onboard', payload);
-  if (data.token) storeToken(data.token);
-  return data;
+  try {
+    const { data } = await api.post<OnboardingResponse>('/api/users/onboard', payload);
+    console.log('[ONBOARDING] Response received:', { hasToken: !!data.token, userName: data.user?.username });
+    if (!data.token) {
+      console.error('[ONBOARDING] No token in response:', data);
+      throw new Error('Server did not return authentication token');
+    }
+    storeToken(data.token);
+    console.log('[ONBOARDING] Token stored successfully');
+    return data;
+  } catch (err: any) {
+    console.error('[ONBOARDING] Error:', err.message, err.response?.data);
+    throw err;
+  }
 };
 
 export const checkUsernameAvailability = async (username: string): Promise<boolean> => {

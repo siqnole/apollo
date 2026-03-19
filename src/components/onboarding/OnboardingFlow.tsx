@@ -28,7 +28,9 @@ export const OnboardingFlow: React.FC = () => {
   // Redirect to dashboard if already logged in
   useEffect(() => {
     const token = localStorage.getItem('apollo_token');
+    console.log('[ONBOARDING_FLOW] Token check:', { hasToken: !!token });
     if (token) {
+      console.log('[ONBOARDING_FLOW] User already logged in, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [navigate]);
@@ -112,7 +114,11 @@ export const OnboardingFlow: React.FC = () => {
 
         {submitError && (
           <p className="text-xs text-destructive text-center mt-3">
-            {(submitError as any)?.response?.data?.error ?? 'Something went wrong — please try again.'}
+            {(() => {
+              const err = submitError as any;
+              console.error('[ONBOARDING_FLOW] Submit error:', err);
+              return err?.response?.data?.error ?? err?.message ?? 'Something went wrong — please try again.';
+            })()}
           </p>
         )}
       </div>

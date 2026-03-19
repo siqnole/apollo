@@ -60,16 +60,29 @@ export async function buildApp() {
 
   app.post('/api/auth/login', async (req, reply) => {
     const { email, password } = req.body as { email: string; password: string };
+    app.log.info(`[LOGIN] Attempt: ${email}`);
     if (!email || !password) return reply.status(400).send({ error: 'Email and password required' });
     const result = await app.db.query(`SELECT id, username, xp, password_hash FROM users WHERE email = $1`, [email.toLowerCase()]);
-    if (result.rows.length === 0) return reply.status(401).send({ error: 'Invalid email or password' });
+    if (result.rows.length === 0) {
+      app.log.warn(`[LOGIN] User not found: ${email}`);
+      return reply.status(401).send({ error: 'Invalid email or password' });
+    }
     const user = result.rows[0];
-    if (!user.password_hash) return reply.status(401).send({ error: 'This account uses social login' });
+    if (!user.password_hash) {
+      app.log.warn(`[LOGIN] User has no password hash: ${email}`);
+      return reply.status(401).send({ error: 'This account uses social login' });
+    }
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return reply.status(401).send({ error: 'Invalid email or password' });
+    if (!valid) {
+      app.log.warn(`[LOGIN] Invalid password for: ${email}`);
+      return reply.status(401).send({ error: 'Invalid email or password' });
+    }
     const token = app.jwt.sign({ sub: user.id, username: user.username }, { expiresIn: '30d' });
+    app.log.info(`[LOGIN] Success: ${user.username} (${user.id})`);
     reply.setCookie('apollo_token', token, { httpOnly: true, secure: false, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
-    return reply.send({ user: { id: user.id, username: user.username, rank: xpToRank(user.xp), xp: user.xp }, token });
+    const response = { user: { id: user.id, username: user.username, rank: xpToRank(user.xp), xp: user.xp }, token };
+    app.log.debug(JSON.stringify({ ['/api/auth/login']: response }));
+    return reply.send(response);
   });
 
   // SPA fallback: serve index.html for unmatched routes (client-side routing)
