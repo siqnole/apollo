@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -7,12 +7,35 @@ import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Arena from './pages/Arena';
-import ArenaProblem from './pages/ArenaProblem';
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
+
+// Lazy-loaded heavy components
+const ArenaProblem = React.lazy(() => import('./pages/ArenaProblem'));
+
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: '#0A0906',
+      color: '#C9A84C',
+      fontSize: '1rem',
+      fontFamily: 'DM Mono, monospace',
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⟳</div>
+        <div>Loading problem...</div>
+      </div>
+    </div>
+  );
+}
 
 // ── Icon Mapper ──────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, any> = {
@@ -333,7 +356,14 @@ function App() {
           <Route path="/privacy"     element={<PrivacyPolicy />} />
           <Route path="/login" element={<Login />} />
           <Route path="/arena" element={<Arena />} />
-          <Route path="/arena/:slug" element={<ArenaProblem />} />
+          <Route 
+            path="/arena/:slug" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ArenaProblem />
+              </Suspense>
+            } 
+          />
           <Route path="/admin"       element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
