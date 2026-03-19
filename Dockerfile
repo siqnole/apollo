@@ -21,8 +21,8 @@ COPY server/tsconfig.json ./server/
 COPY server/src ./server/src
 RUN cd server && npm run build && cd ..
 
-# Copy migration files to dist for runtime access
-RUN mkdir -p /app/server/dist/db && cp /app/server/src/db/migrate.sql /app/server/dist/db/
+# Copy all SQL files to dist for runtime access
+RUN mkdir -p /app/server/dist/db && cp /app/server/src/db/*.sql /app/server/dist/db/
 
 # Stage 3: Production image
 FROM node:20-alpine

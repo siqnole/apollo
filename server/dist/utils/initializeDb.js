@@ -18,58 +18,69 @@ async function initializeDatabase(databaseUrl) {
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' AND table_name = 'users'
         )`);
-            if (tableCheck.rows[0].exists) {
-                console.error('[DB] ✅ Database already initialized - users table exists');
-                return;
-            }
-            console.error('[DB] Database not initialized - running migration...');
-            // Try to find and read the migration SQL file
-            const distPath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
-            const srcPath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
-            console.error(`[DB] Checking for migration file...`);
-            console.error(`[DB]   Dist path: ${distPath} (exists: ${(0, fs_1.existsSync)(distPath)})`);
-            console.error(`[DB]   Src path: ${srcPath} (exists: ${(0, fs_1.existsSync)(srcPath)})`);
-            let migrateSql;
-            if ((0, fs_1.existsSync)(distPath)) {
-                console.error(`[DB] ✅ Found migration file at dist path`);
-                migrateSql = (0, fs_1.readFileSync)(distPath, 'utf-8');
-            }
-            else if ((0, fs_1.existsSync)(srcPath)) {
-                console.error(`[DB] ✅ Found migration file at src path`);
-                migrateSql = (0, fs_1.readFileSync)(srcPath, 'utf-8');
+            let schemaInitialized = tableCheck.rows[0].exists;
+            if (!schemaInitialized) {
+                console.error('[DB] Database not initialized - running migration...');
+                // Try to find and read the migration SQL file
+                const distPath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
+                const srcPath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
+                console.error(`[DB] Checking for migration file...`);
+                console.error(`[DB]   Dist path: ${distPath} (exists: ${(0, fs_1.existsSync)(distPath)})`);
+                console.error(`[DB]   Src path: ${srcPath} (exists: ${(0, fs_1.existsSync)(srcPath)})`);
+                let migrateSql;
+                if ((0, fs_1.existsSync)(distPath)) {
+                    console.error(`[DB] ✅ Found migration file at dist path`);
+                    migrateSql = (0, fs_1.readFileSync)(distPath, 'utf-8');
+                }
+                else if ((0, fs_1.existsSync)(srcPath)) {
+                    console.error(`[DB] ✅ Found migration file at src path`);
+                    migrateSql = (0, fs_1.readFileSync)(srcPath, 'utf-8');
+                }
+                else {
+                    throw new Error(`Migration file not found at ${distPath} or ${srcPath}`);
+                }
+                console.error('[DB] Running migration SQL...');
+                await client.query(migrateSql);
+                console.error('[DB] ✅ Database schema initialized successfully');
             }
             else {
-                throw new Error(`Migration file not found at ${distPath} or ${srcPath}`);
+                console.error('[DB] ✅ Database schema already exists');
             }
-            console.error('[DB] Running migration SQL...');
-            await client.query(migrateSql);
-            console.error('[DB] ✅ Database schema initialized successfully');
-            // Dynamically load all SQL files from db directory
-            const dbDir = (0, fs_1.existsSync)((0, path_1.resolve)(__dirname, '../db')) ? (0, path_1.resolve)(__dirname, '../db') : (0, path_1.resolve)(__dirname, '../../src/db');
-            const allFiles = (0, fs_1.readdirSync)(dbDir)
-                .filter(file => file.endsWith('.sql') && file !== 'migrate.sql')
-                .sort();
-            console.error(`[DB] Loading ${allFiles.length} data files...`);
-            for (const file of allFiles) {
-                const filePath = (0, path_1.resolve)(dbDir, file);
-                try {
-                    const sql = (0, fs_1.readFileSync)(filePath, 'utf-8');
-                    await client.query(sql);
-                    console.error(`[DB]   ✅ Loaded ${file}`);
+            // Check if problems exist
+            const problemCount = await client.query('SELECT COUNT(*) FROM problems');
+            const problemsExist = parseInt(problemCount.rows[0].count) > 0;
+            // Dynamically load all SQL files from db directory (even if schema exists)
+            if (!problemsExist) {
+                console.error('[DB] No problems found - loading problem data...');
+                const dbDir = (0, fs_1.existsSync)((0, path_1.resolve)(__dirname, '../db')) ? (0, path_1.resolve)(__dirname, '../db') : (0, path_1.resolve)(__dirname, '../../src/db');
+                const allFiles = (0, fs_1.readdirSync)(dbDir)
+                    .filter(file => file.endsWith('.sql') && file !== 'migrate.sql')
+                    .sort();
+                console.error(`[DB] Loading ${allFiles.length} data files...`);
+                for (const file of allFiles) {
+                    const filePath = (0, path_1.resolve)(dbDir, file);
+                    try {
+                        const sql = (0, fs_1.readFileSync)(filePath, 'utf-8');
+                        await client.query(sql);
+                        console.error(`[DB]   ✅ Loaded ${file}`);
+                    }
+                    catch (err) {
+                        console.error(`[DB]   ⚠️  Error loading ${file}: ${err.message}`);
+                        // Continue loading other files even if one fails
+                    }
                 }
-                catch (err) {
-                    console.error(`[DB]   ⚠️  Error loading ${file}: ${err.message}`);
-                    // Continue loading other files even if one fails
-                }
+                console.error('[DB] ✅ All data files loaded');
             }
-            console.error('[DB] ✅ All data files loaded');
+            else {
+                console.error(`[DB] ✅ Problems already loaded (${problemCount.rows[0].count} problems)`);
+            }
             // Verify tables exist
             const tableResult = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
             const tables = tableResult.rows.map((r) => r.table_name);
             console.error(`[DB] 📊 Created tables: ${tables.join(', ')}`);
-            // Check problem count
-            const problemCount = await client.query('SELECT COUNT(*) FROM problems');
-            console.error(`[DB] 📊 Total problems: ${problemCount.rows[0].count}`);
+            // Check final problem count
+            const finalProblems = await client.query('SELECT COUNT(*) FROM problems');
+            console.error(`[DB] 📊 Total problems: ${finalProblems.rows[0].count}`);
         }
         finally {
             client.release();
