@@ -6,6 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "init-db": "tsx src/scripts/init-db.ts",
     "test:judge": "tsx src/utils/testJudge.ts",
     "test:judge:watch": "tsx watch src/utils/testJudge.ts",
     "test:enhanced": "tsx src/utils/testJudgeEnhanced.ts",

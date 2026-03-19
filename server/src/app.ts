@@ -98,6 +98,24 @@ export async function buildApp() {
     }
   });
 
-  app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }));
+  app.get('/health', async () => {
+    try {
+      // Verify database connectivity
+      await app.db.query('SELECT 1');
+      return {
+        status: 'ok',
+        ts: new Date().toISOString(),
+        database: 'connected'
+      };
+    } catch (err: any) {
+      app.log.error('Health check failed:', err?.message ?? String(err));
+      return {
+        status: 'error',
+        ts: new Date().toISOString(),
+        database: 'disconnected',
+        error: err instanceof Error ? err.message : String(err)
+      };
+    }
+  });
   return app;
 }
