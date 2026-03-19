@@ -101,8 +101,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   problem_id      UUID NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
-  language        TEXT NOT NULL,
-  code            TEXT NOT NULL,
+  problem_type    problem_type_enum,
+  language        TEXT,
+  code            TEXT,
+  answer          TEXT,
   status          submission_status_enum NOT NULL DEFAULT 'pending',
   error_message   TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
