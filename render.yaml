@@ -33,6 +33,9 @@ services:
     dockerfilePath: Dockerfile
     
     # Build command runs automatically based on Dockerfile
+    
+    # Initialize database schema after build
+    postBuildCommand: "cd server && npm run init-db"
 
 databases:
   - name: apollo-db
