@@ -44,10 +44,32 @@ async function initializeDatabase(databaseUrl) {
             console.error('[DB] Running migration SQL...');
             await client.query(migrateSql);
             console.error('[DB] ✅ Database schema initialized successfully');
+            // Dynamically load all SQL files from db directory
+            const dbDir = (0, fs_1.existsSync)((0, path_1.resolve)(__dirname, '../db')) ? (0, path_1.resolve)(__dirname, '../db') : (0, path_1.resolve)(__dirname, '../../src/db');
+            const allFiles = (0, fs_1.readdirSync)(dbDir)
+                .filter(file => file.endsWith('.sql') && file !== 'migrate.sql')
+                .sort();
+            console.error(`[DB] Loading ${allFiles.length} data files...`);
+            for (const file of allFiles) {
+                const filePath = (0, path_1.resolve)(dbDir, file);
+                try {
+                    const sql = (0, fs_1.readFileSync)(filePath, 'utf-8');
+                    await client.query(sql);
+                    console.error(`[DB]   ✅ Loaded ${file}`);
+                }
+                catch (err) {
+                    console.error(`[DB]   ⚠️  Error loading ${file}: ${err.message}`);
+                    // Continue loading other files even if one fails
+                }
+            }
+            console.error('[DB] ✅ All data files loaded');
             // Verify tables exist
             const tableResult = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
             const tables = tableResult.rows.map((r) => r.table_name);
             console.error(`[DB] 📊 Created tables: ${tables.join(', ')}`);
+            // Check problem count
+            const problemCount = await client.query('SELECT COUNT(*) FROM problems');
+            console.error(`[DB] 📊 Total problems: ${problemCount.rows[0].count}`);
         }
         finally {
             client.release();
