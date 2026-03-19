@@ -53,14 +53,22 @@ CREATE TABLE IF NOT EXISTS rivals (
 -- Problems & Submissions
 -- ─────────────────────────────────────────────────────────────────────────
 
-CREATE TYPE problem_type_enum AS ENUM (
-  'code', 'multiple_choice', 'fill_blank', 'debug', 'ordering', 'short_answer', 'html_css',
-  'shell', 'sql', 'shell_sql', 'python_code'
-);
+DO $$ BEGIN
+  CREATE TYPE problem_type_enum AS ENUM (
+    'code', 'multiple_choice', 'fill_blank', 'debug', 'ordering', 'short_answer', 'html_css',
+    'shell', 'sql', 'shell_sql', 'python_code'
+  );
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
-CREATE TYPE submission_status_enum AS ENUM (
-  'pending', 'accepted', 'wrong_answer', 'runtime_error', 'timeout', 'compile_error'
-);
+DO $$ BEGIN
+  CREATE TYPE submission_status_enum AS ENUM (
+    'pending', 'accepted', 'wrong_answer', 'runtime_error', 'timeout', 'compile_error'
+  );
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS problems (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
