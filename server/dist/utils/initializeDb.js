@@ -19,36 +19,40 @@ async function initializeDatabase(databaseUrl) {
           WHERE table_schema = 'public' AND table_name = 'users'
         )`);
             if (tableCheck.rows[0].exists) {
-                console.log('db already initialized - users table exists');
+                console.log('[DB] ✅ Database already initialized - users table exists');
                 return;
             }
-            console.log('db not initialized - running migration...');
+            console.log('[DB] Starting migration...');
             // Read and execute migration SQL
             // In production, the file is at dist/db/migrate.sql
             // In development, we go back to src/db/migrate.sql
             let migratePath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
             try {
-                // Try production path first
                 (0, fs_1.readFileSync)(migratePath);
+                console.log(`[DB] Using migration file at: ${migratePath}`);
             }
             catch {
                 // Fall back to source path for development
                 migratePath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
+                console.log(`[DB] Dist path not found, trying source path: ${migratePath}`);
+                (0, fs_1.readFileSync)(migratePath);
             }
             const migrateSql = (0, fs_1.readFileSync)(migratePath, 'utf-8');
+            console.log('[DB] Running migration SQL...');
             await client.query(migrateSql);
-            console.log('db schema initialized successfully');
+            console.log('[DB] ✅ Database schema initialized successfully');
             // Verify tables exist
             const tableResult = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
             const tables = tableResult.rows.map((r) => r.table_name);
-            console.log(`created: ${tables.join(', ')}`);
+            console.log(`[DB] 📊 Created tables: ${tables.join(', ')}`);
         }
         finally {
             client.release();
         }
     }
     catch (err) {
-        console.error('db initialization failed:', err);
+        console.error('[DB] ❌ Database initialization failed:');
+        console.error(err);
         throw err;
     }
     finally {

@@ -14,17 +14,26 @@ async function start() {
       throw new Error('DATABASE_URL environment variable not set');
     }
 
-    console.log('Initializing database...');
-    await initializeDatabase(DATABASE_URL);
+    console.log('[INIT] Database URL is set');
+    console.log('[INIT] Initializing database...');
+    try {
+      await initializeDatabase(DATABASE_URL);
+      console.log('[INIT] ✅ Database initialization complete');
+    } catch (dbErr) {
+      console.error('[INIT] ❌ Database initialization failed:');
+      console.error(dbErr);
+      throw dbErr;
+    }
 
-    console.log('Building app...');
+    console.log('[INIT] Building app...');
     const app = await buildApp();
     
-    console.log(`Listening on ${HOST}:${PORT}...`);
+    console.log(`[INIT] Listening on ${HOST}:${PORT}...`);
     await app.listen({ port: PORT, host: HOST });
-    console.log(`\nrunning on http://localhost:${PORT}\n`);
+    console.log(`[INIT] ✅ Server running on http://localhost:${PORT}\n`);
   } catch (err) {
-    console.error('failed to start server:', err);
+    console.error('[INIT] ❌ Failed to start server:');
+    console.error(err);
     process.exit(1);
   }
 }

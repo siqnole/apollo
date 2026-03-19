@@ -23,11 +23,11 @@ export async function initializeDatabase(databaseUrl: string) {
       );
 
       if (tableCheck.rows[0].exists) {
-        console.log('db already initialized - users table exists');
+        console.log('[DB] ✅ Database already initialized - users table exists');
         return;
       }
 
-      console.log('db not initialized - running migration...');
+      console.log('[DB] Starting migration...');
 
       // Read and execute migration SQL
       // In production, the file is at dist/db/migrate.sql
@@ -35,29 +35,33 @@ export async function initializeDatabase(databaseUrl: string) {
       let migratePath = resolve(__dirname, '../db/migrate.sql');
       
       try {
-        // Try production path first
         readFileSync(migratePath);
+        console.log(`[DB] Using migration file at: ${migratePath}`);
       } catch {
         // Fall back to source path for development
         migratePath = resolve(__dirname, '../../src/db/migrate.sql');
+        console.log(`[DB] Dist path not found, trying source path: ${migratePath}`);
+        readFileSync(migratePath);
       }
       
       const migrateSql = readFileSync(migratePath, 'utf-8');
-
+      
+      console.log('[DB] Running migration SQL...');
       await client.query(migrateSql);
-      console.log('db schema initialized successfully');
+      console.log('[DB] ✅ Database schema initialized successfully');
 
       // Verify tables exist
       const tableResult = await client.query(
         `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`
       );
       const tables = tableResult.rows.map((r: any) => r.table_name);
-      console.log(`created: ${tables.join(', ')}`);
+      console.log(`[DB] 📊 Created tables: ${tables.join(', ')}`);
     } finally {
       client.release();
     }
   } catch (err) {
-    console.error('db initialization failed:', err);
+    console.error('[DB] ❌ Database initialization failed:');
+    console.error(err);
     throw err;
   } finally {
     await pool.end();
