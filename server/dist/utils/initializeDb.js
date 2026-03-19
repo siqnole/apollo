@@ -19,25 +19,36 @@ async function initializeDatabase(databaseUrl) {
           WHERE table_schema = 'public' AND table_name = 'users'
         )`);
             if (tableCheck.rows[0].exists) {
-                console.log('✅ Database already initialized - users table exists');
+                console.log('db already initialized - users table exists');
                 return;
             }
-            console.log('🚀 Database not initialized - running migration...');
+            console.log('db not initialized - running migration...');
             // Read and execute migration SQL
-            const migrateSql = (0, fs_1.readFileSync)((0, path_1.resolve)(__dirname, '../db/migrate.sql'), 'utf-8');
+            // In production, the file is at dist/db/migrate.sql
+            // In development, we go back to src/db/migrate.sql
+            let migratePath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
+            try {
+                // Try production path first
+                (0, fs_1.readFileSync)(migratePath);
+            }
+            catch {
+                // Fall back to source path for development
+                migratePath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
+            }
+            const migrateSql = (0, fs_1.readFileSync)(migratePath, 'utf-8');
             await client.query(migrateSql);
-            console.log('✅ Database schema initialized successfully');
+            console.log('db schema initialized successfully');
             // Verify tables exist
             const tableResult = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
             const tables = tableResult.rows.map((r) => r.table_name);
-            console.log(`📊 Tables created: ${tables.join(', ')}`);
+            console.log(`created: ${tables.join(', ')}`);
         }
         finally {
             client.release();
         }
     }
     catch (err) {
-        console.error('❌ Database initialization failed:', err);
+        console.error('db initialization failed:', err);
         throw err;
     }
     finally {

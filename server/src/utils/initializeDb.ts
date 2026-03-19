@@ -30,10 +30,19 @@ export async function initializeDatabase(databaseUrl: string) {
       console.log('db not initialized - running migration...');
 
       // Read and execute migration SQL
-      const migrateSql = readFileSync(
-        resolve(__dirname, '../db/migrate.sql'),
-        'utf-8'
-      );
+      // In production, the file is at dist/db/migrate.sql
+      // In development, we go back to src/db/migrate.sql
+      let migratePath = resolve(__dirname, '../db/migrate.sql');
+      
+      try {
+        // Try production path first
+        readFileSync(migratePath);
+      } catch {
+        // Fall back to source path for development
+        migratePath = resolve(__dirname, '../../src/db/migrate.sql');
+      }
+      
+      const migrateSql = readFileSync(migratePath, 'utf-8');
 
       await client.query(migrateSql);
       console.log('db schema initialized successfully');
