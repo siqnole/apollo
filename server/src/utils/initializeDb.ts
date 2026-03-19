@@ -24,33 +24,33 @@ export async function initializeDatabase(databaseUrl: string) {
 
       let schemaInitialized = tableCheck.rows[0].exists;
 
-      if (!schemaInitialized) {
-        console.error('[DB] Database not initialized - running migration...');
+      // Always run migration to ensure schema consistency (uses IF NOT EXISTS)
+      console.error('[DB] Running schema migration...');
 
-        // Try to find and read the migration SQL file
-        const distPath = resolve(__dirname, '../db/migrate.sql');
-        const srcPath = resolve(__dirname, '../../src/db/migrate.sql');
-        
-        console.error(`[DB] Checking for migration file...`);
-        console.error(`[DB]   Dist path: ${distPath} (exists: ${existsSync(distPath)})`);
-        console.error(`[DB]   Src path: ${srcPath} (exists: ${existsSync(srcPath)})`);
-        
-        let migrateSql: string;
-        if (existsSync(distPath)) {
-          console.error(`[DB] ✅ Found migration file at dist path`);
-          migrateSql = readFileSync(distPath, 'utf-8');
-        } else if (existsSync(srcPath)) {
-          console.error(`[DB] ✅ Found migration file at src path`);
-          migrateSql = readFileSync(srcPath, 'utf-8');
-        } else {
-          throw new Error(`Migration file not found at ${distPath} or ${srcPath}`);
-        }
-        
-        console.error('[DB] Running migration SQL...');
-        await client.query(migrateSql);
-        console.error('[DB] ✅ Database schema initialized successfully');
+      // Try to find and read the migration SQL file
+      const distPath = resolve(__dirname, '../db/migrate.sql');
+      const srcPath = resolve(__dirname, '../../src/db/migrate.sql');
+      
+      console.error(`[DB] Checking for migration file...`);
+      console.error(`[DB]   Dist path: ${distPath} (exists: ${existsSync(distPath)})`);
+      console.error(`[DB]   Src path: ${srcPath} (exists: ${existsSync(srcPath)})`);
+      
+      let migrateSql: string;
+      if (existsSync(distPath)) {
+        console.error(`[DB] ✅ Found migration file at dist path`);
+        migrateSql = readFileSync(distPath, 'utf-8');
+      } else if (existsSync(srcPath)) {
+        console.error(`[DB] ✅ Found migration file at src path`);
+        migrateSql = readFileSync(srcPath, 'utf-8');
       } else {
-        console.error('[DB] ✅ Database schema already exists');
+        throw new Error(`Migration file not found at ${distPath} or ${srcPath}`);
+      }
+      
+      await client.query(migrateSql);
+      if (!schemaInitialized) {
+        console.error('[DB] ✅ Database schema created');
+      } else {
+        console.error('[DB] ✅ Schema consistency check passed');
       }
 
       // Check if problems exist

@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS rivals (
 -- ─────────────────────────────────────────────────────────────────────────
 
 CREATE TYPE problem_type_enum AS ENUM (
-  'code', 'multiple_choice', 'fill_blank', 'debug', 'ordering', 'short_answer', 'html_css'
+  'code', 'multiple_choice', 'fill_blank', 'debug', 'ordering', 'short_answer', 'html_css',
+  'shell', 'sql', 'shell_sql', 'python_code'
 );
 
 CREATE TYPE submission_status_enum AS ENUM (
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS test_cases (
   input           TEXT NOT NULL,
   expected_output TEXT NOT NULL,
   is_hidden       BOOLEAN NOT NULL DEFAULT FALSE,
+  explanation     TEXT,
   display_order   INTEGER NOT NULL DEFAULT 0
 );
 
@@ -102,6 +104,16 @@ CREATE TABLE IF NOT EXISTS submissions (
 -- Multiple Choice & Short Answer Options
 -- ─────────────────────────────────────────────────────────────────────────
 
+CREATE TABLE IF NOT EXISTS problem_options (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  problem_id      UUID NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
+  label           TEXT,
+  body            TEXT NOT NULL,
+  is_correct      BOOLEAN NOT NULL DEFAULT FALSE,
+  display_order   INTEGER NOT NULL DEFAULT 0
+);
+
+-- Keep choices as alias for backward compatibility
 CREATE TABLE IF NOT EXISTS choices (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   problem_id      UUID NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
@@ -121,5 +133,12 @@ CREATE INDEX IF NOT EXISTS idx_problems_slug ON problems(slug);
 CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(problem_id);
 CREATE INDEX IF NOT EXISTS idx_test_cases_problem ON test_cases(problem_id);
+CREATE INDEX IF NOT EXISTS idx_problem_options_problem ON problem_options(problem_id);
 CREATE INDEX IF NOT EXISTS idx_choices_problem ON choices(problem_id);
 CREATE INDEX IF NOT EXISTS idx_users_skill_tier ON users(skill_tier);
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Schema Migrations (for existing databases)
+-- ─────────────────────────────────────────────────────────────────────────
+
+ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS explanation TEXT;
