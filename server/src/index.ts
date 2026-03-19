@@ -1,6 +1,8 @@
 import 'dotenv/config';
-console.log('Starting Apollo...');
-console.log('DB URL:', process.env.DATABASE_URL?.substring(0, 40) + '...');
+console.error('[STARTUP] Starting Apollo server...');
+console.error('[STARTUP] DB URL:', process.env.DATABASE_URL?.substring(0, 40) + '...');
+console.error('[STARTUP] NODE_ENV:', process.env.NODE_ENV);
+
 import { buildApp } from './app';
 import { initializeDatabase } from './utils/initializeDb';
 
@@ -14,28 +16,32 @@ async function start() {
       throw new Error('DATABASE_URL environment variable not set');
     }
 
-    console.log('[INIT] Database URL is set');
-    console.log('[INIT] Initializing database...');
+    console.error('[DB INIT] Attempting database initialization...');
+    
     try {
       await initializeDatabase(DATABASE_URL);
-      console.log('[INIT] ✅ Database initialization complete');
+      console.error('[DB INIT] ✅ Database initialization complete');
     } catch (dbErr) {
-      console.error('[INIT] ❌ Database initialization failed:');
+      console.error('[DB INIT] ⚠️  Database initialization error (continuing anyway):');
       console.error(dbErr);
-      throw dbErr;
+      // Don't throw - let the server start anyway
     }
 
-    console.log('[INIT] Building app...');
+    console.error('[APP BUILD] Building Fastify app...');
     const app = await buildApp();
     
-    console.log(`[INIT] Listening on ${HOST}:${PORT}...`);
+    console.error(`[SERVER] Listening on ${HOST}:${PORT}...`);
     await app.listen({ port: PORT, host: HOST });
-    console.log(`[INIT] ✅ Server running on http://localhost:${PORT}\n`);
+    console.error(`[SERVER] ✅ Server running on http://${HOST}:${PORT}\n`);
   } catch (err) {
-    console.error('[INIT] ❌ Failed to start server:');
+    console.error('[STARTUP] ❌ Fatal error starting server:');
     console.error(err);
     process.exit(1);
   }
 }
 
-start();
+start().catch((err) => {
+  console.error('[STARTUP] Uncaught error in start function:');
+  console.error(err);
+  process.exit(1);
+});

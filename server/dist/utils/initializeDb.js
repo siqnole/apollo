@@ -19,32 +19,35 @@ async function initializeDatabase(databaseUrl) {
           WHERE table_schema = 'public' AND table_name = 'users'
         )`);
             if (tableCheck.rows[0].exists) {
-                console.log('[DB] ✅ Database already initialized - users table exists');
+                console.error('[DB] ✅ Database already initialized - users table exists');
                 return;
             }
-            console.log('[DB] Starting migration...');
-            // Read and execute migration SQL
-            // In production, the file is at dist/db/migrate.sql
-            // In development, we go back to src/db/migrate.sql
-            let migratePath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
-            try {
-                (0, fs_1.readFileSync)(migratePath);
-                console.log(`[DB] Using migration file at: ${migratePath}`);
+            console.error('[DB] Database not initialized - running migration...');
+            // Try to find and read the migration SQL file
+            const distPath = (0, path_1.resolve)(__dirname, '../db/migrate.sql');
+            const srcPath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
+            console.error(`[DB] Checking for migration file...`);
+            console.error(`[DB]   Dist path: ${distPath} (exists: ${(0, fs_1.existsSync)(distPath)})`);
+            console.error(`[DB]   Src path: ${srcPath} (exists: ${(0, fs_1.existsSync)(srcPath)})`);
+            let migrateSql;
+            if ((0, fs_1.existsSync)(distPath)) {
+                console.error(`[DB] ✅ Found migration file at dist path`);
+                migrateSql = (0, fs_1.readFileSync)(distPath, 'utf-8');
             }
-            catch {
-                // Fall back to source path for development
-                migratePath = (0, path_1.resolve)(__dirname, '../../src/db/migrate.sql');
-                console.log(`[DB] Dist path not found, trying source path: ${migratePath}`);
-                (0, fs_1.readFileSync)(migratePath);
+            else if ((0, fs_1.existsSync)(srcPath)) {
+                console.error(`[DB] ✅ Found migration file at src path`);
+                migrateSql = (0, fs_1.readFileSync)(srcPath, 'utf-8');
             }
-            const migrateSql = (0, fs_1.readFileSync)(migratePath, 'utf-8');
-            console.log('[DB] Running migration SQL...');
+            else {
+                throw new Error(`Migration file not found at ${distPath} or ${srcPath}`);
+            }
+            console.error('[DB] Running migration SQL...');
             await client.query(migrateSql);
-            console.log('[DB] ✅ Database schema initialized successfully');
+            console.error('[DB] ✅ Database schema initialized successfully');
             // Verify tables exist
             const tableResult = await client.query(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
             const tables = tableResult.rows.map((r) => r.table_name);
-            console.log(`[DB] 📊 Created tables: ${tables.join(', ')}`);
+            console.error(`[DB] 📊 Created tables: ${tables.join(', ')}`);
         }
         finally {
             client.release();
