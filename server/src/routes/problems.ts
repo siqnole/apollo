@@ -67,8 +67,12 @@ export default async function problemRoutes(fastify: FastifyInstance) {
     return reply.send({
       ...problem,
       test_cases: testCases.rows.map(tc => ({
-        ...tc,
-        expected_output: tc.is_hidden ? null : tc.expected_output,
+        id: tc.id,
+        input: tc.input,
+        expected_output: null, // Always hide expected output from client to prevent cheating
+        is_hidden: tc.is_hidden,
+        explanation: tc.explanation,
+        display_order: tc.display_order,
       })),
       options: safeOptions,
     });

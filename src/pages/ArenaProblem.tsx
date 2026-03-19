@@ -13,6 +13,7 @@ import { EditorView } from '@codemirror/view';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import 'katex/dist/katex.min.css';
 import ShellTerminal from '../components/arena/ShellTerminal';
 import SqlEditor from '../components/arena/SqlEditor';
@@ -189,7 +190,7 @@ function ProblemDescription({ text }: { text: string }) {
       <style>{katexStyle}</style>
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
         components={markdownComponents}
       >
         {text}
