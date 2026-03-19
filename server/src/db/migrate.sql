@@ -122,5 +122,4 @@ CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(problem_id);
 CREATE INDEX IF NOT EXISTS idx_test_cases_problem ON test_cases(problem_id);
 CREATE INDEX IF NOT EXISTS idx_choices_problem ON choices(problem_id);
-CREATE INDEX IF NOT EXISTS idx_users_level     ON users(level);
-CREATE INDEX IF NOT EXISTS idx_users_username  ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_skill_tier ON users(skill_tier);
