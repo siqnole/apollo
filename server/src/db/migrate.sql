@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS problem_options (
   label           TEXT,
   body            TEXT NOT NULL,
   is_correct      BOOLEAN NOT NULL DEFAULT FALSE,
-  display_order   INTEGER NOT NULL DEFAULT 0
+  display_order   INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (problem_id, label, body, display_order)
 );
 
 -- Keep choices as alias for backward compatibility
@@ -151,4 +152,25 @@ CREATE INDEX IF NOT EXISTS idx_users_skill_tier ON users(skill_tier);
 -- Schema Migrations (for existing databases)
 -- ─────────────────────────────────────────────────────────────────────────
 
+-- Add UNIQUE constraint to prevent duplicate answers (if not already present)
+ALTER TABLE problem_options
+ADD CONSTRAINT unique_problem_option UNIQUE (problem_id, label, body, display_order)
+ON CONFLICT DO NOTHING;
+
+-- Remove any existing duplicates in problem_options before the unique constraint takes effect
+-- Keep only the first occurrence of each (problem_id, body, display_order) combination
+DELETE FROM problem_options
+WHERE id IN (
+  SELECT id
+  FROM (
+    SELECT 
+      po.id,
+      ROW_NUMBER() OVER (
+        PARTITION BY po.problem_id, po.body, po.display_order 
+        ORDER BY po.id ASC
+      ) as rn
+    FROM problem_options po
+  ) ranked
+  WHERE rn > 1
+);
 ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS explanation TEXT;
